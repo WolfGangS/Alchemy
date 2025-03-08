@@ -12706,6 +12706,22 @@ are wearing now.
   </notification>
 
   <notification
+   icon="notifytip.tga"
+   name="ChatCommandSetDebug"
+   type="notifytip"
+   log_to_im="true">
+    Set debug '[SETTING]' to '[VALUE]'
+  </notification>
+
+  <notification
+   icon="notifytip.tga"
+   name="ChatCommandSetNonDebug"
+   type="notifytip"
+   log_to_im="true">
+    Cannot find debug setting '[SETTING]'
+  </notification>
+
+  <notification
    icon="notify.tga"
    name="DumpArchetypeSuccess"
    type="notify">

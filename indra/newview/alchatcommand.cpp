@@ -78,6 +78,8 @@ bool ALChatCommand::parseCommand(std::string data)
         static LLCachedControl<std::string> sTeleportToCam(gSavedSettings, "AlchemyChatCommandTeleportToCam", "/tp2cam");
         static LLCachedControl<std::string> sHoverHeight(gSavedSettings, "AlchemyChatCommandHoverHeight", "/hover");
         static LLCachedControl<std::string> sAOCommand(gSavedSettings, "AlchemyChatCommandAnimationOverride", "/ao");
+        static LLCachedControl<std::string> sSetDebugCommand(gSavedSettings, "AlchemyChatCommandSetDebug", "/setdbg");
+        static LLCachedControl<std::string> sTglDebugCommand(gSavedSettings, "AlchemyChatCommandToggleDebug", "/tgldbg");
 
         if (cmd == utf8str_tolower(sDrawDistanceCommand()))  // dd
         {
@@ -347,6 +349,171 @@ bool ALChatCommand::parseCommand(std::string data)
             gAgent.sendReliableMessage();
             return true;
         }
+
+        static LLCachedControl<bool> sPowerfulWizard(gSavedSettings, "AlchemyPowerfulWizard", false);
+
+        if(!sPowerfulWizard) return false;
+
+        if (cmd == utf8str_tolower(sSetDebugCommand()))
+        {
+            std::string debugsetting;
+            if(!(input >> debugsetting))
+                return false;
+            
+            LLControlVariable* control = gSavedSettings.getControl(debugsetting);
+
+            LLSD args;
+            args["SETTING"] = debugsetting;
+
+            if(control) {
+
+                switch(control->type())
+                {
+                    case TYPE_F32:
+                        {
+                            F32 value;
+                            if(input >> value) {
+                                control->set(value);
+                            }
+                        }
+                        break;
+                    case TYPE_S32:
+                        {
+                            S32 value;
+                            if(input >> value) {
+                                control->set(value);
+                            }
+                        }
+                        break;
+                    case TYPE_U32:
+                        {
+                            U32 value;
+                            if(input >> value) {
+                                control->set(value);
+                            }
+                        }
+                        break;
+                    case TYPE_BOOLEAN:
+                        {
+                            std::string arg;
+                            BOOL value = FALSE;
+                            if (input >> arg)
+                            {
+                                if (arg == "on") value = TRUE;
+                            }
+                            
+                            control->set(value);
+                        }
+                        break;
+                    case TYPE_STRING:
+                        {
+                            std::string value;
+                            if(input >> value) {
+                                control->set(value);
+                            }
+                        }
+                        break;
+            
+                    default:
+                        return true;
+            
+                }
+                args["VALUE"] = control->getValue();
+                LLNotificationsUtil::add("ChatCommandSetDebug", args);
+            } else {
+                LLNotificationsUtil::add("ChatCommandSetNonDebug", args);
+            }
+            return true;
+        }
+        else if (cmd == utf8str_tolower(sTglDebugCommand()))
+        {
+            std::string debugsetting;
+            if(!(input >> debugsetting))
+                return false;
+            
+            LLControlVariable* control = gSavedSettings.getControl(debugsetting);
+
+            LLSD args;
+            args["SETTING"] = debugsetting;
+
+            if(control) {
+                
+                switch(control->type())
+                {
+                    case TYPE_F32:
+                        {
+                            F32 value;
+                            if(input >> value) {
+                                if (control->getValue().asReal() == value) {
+                                    if (input >> value) {
+                                        control->set(value);
+                                    }
+                                } else {
+                                    control->set(value);
+                                }
+                            }
+                        }
+                        break;
+                    case TYPE_S32:
+                        {
+                            S32 value;
+                            if(input >> value) {
+                                if (control->getValue().asInteger() == value) {
+                                    if (input >> value) {
+                                        control->set(value);
+                                    }
+                                } else {
+                                    control->set(value);
+                                }
+                            }
+                        }
+                        break;
+                    case TYPE_U32:
+                        {
+                            U32 value;
+                            if(input >> value) {
+                                if (control->getValue().asInteger() == value) {
+                                    if (input >> value) {
+                                        control->set(value);
+                                    }
+                                } else {
+                                    control->set(value);
+                                }
+                            }
+                        }
+                        break;
+                    case TYPE_BOOLEAN:
+                        {
+                            control->set(!control->getValue().asBoolean());
+                        }
+                        break;
+                    case TYPE_STRING:
+                        {
+                            std::string value;
+                            if(input >> value) {
+                                if (control->getValue().asString() == value) {
+                                    if (input >> value) {
+                                        control->set(value);
+                                    }
+                                } else {
+                                    control->set(value);
+                                }
+                            }
+                        }
+                        break;
+            
+                    default:
+                        return true;
+            
+                }
+                args["VALUE"] = control->getValue();
+                LLNotificationsUtil::add("ChatCommandSetDebug", args);
+            } else {
+                LLNotificationsUtil::add("ChatCommandSetNonDebug", args);
+            }
+            return true;
+        }
+
     }
     return false;
 }
