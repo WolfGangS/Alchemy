@@ -14106,6 +14106,17 @@
       <key>Value</key>
       <string />
     </map>
+    <key>ExternalEditorLuaFileEnding</key>
+    <map>
+      <key>Comment</key>
+      <string>File Ending to use when saving temporary lua file for the external editor</string>
+      <key>Persist</key>
+      <integer>1</integer>
+      <key>Type</key>
+      <string>String</string>
+      <key>Value</key>
+      <string>.lua</string>
+    </map>
     <key>YawFromMousePosition</key>
     <map>
       <key>Comment</key>

@@ -1323,7 +1323,7 @@ void LLScriptEdCore::openInExternalEditor()
             // and not accounted for, name is too long or some other issue,
             // try file that doesn't include script name
             script_name.clear();
-            filename = mContainer->getTmpFileName(script_name);
+            filename = mContainer->getTmpFileName(script_name, mEditor->getIsLuauLanguage());
             writeToFile(filename, mLSLPreprocEnabled);
         }
 
@@ -1331,7 +1331,15 @@ void LLScriptEdCore::openInExternalEditor()
         mLiveFile = new LLLiveLSLFile(filename, boost::bind(&LLScriptEdContainer::onExternalChange, mContainer, _1));
         mLiveFile->addToEventTimer();
 
-        status = ed.run(filename);
+        std::string agent_id_string;
+        gAgent.getID().toString(agent_id_string);
+
+        std::map<std::string, std::string> params = {
+            {"%l", mEditor->getIsLuauLanguage() ? "luau" : "lsl"},
+            {"%k", agent_id_string}
+        };
+
+        status = ed.run(filename, params);
         if (status != LLExternalEditor::EC_SUCCESS)
         {
             msg = LLExternalEditor::getErrorMessage(status);
@@ -1775,7 +1783,7 @@ std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name, 
     LLMD5 script_id_hash((const U8 *)script_id.c_str());
     script_id_hash.hex_digest(script_id_hash_str);
 
-    static LLCachedControl<std::string> lauFileEnding(gSavedSettings, "WGExternalEditorLuaFileEnding", ".lua");
+    static LLCachedControl<std::string> lauFileEnding(gSavedSettings, "ExternalEditorLuaFileEnding", ".lua");
 
     std::string file_ending = lua ? utf8str_tolower(lauFileEnding) : ".lsl";
 

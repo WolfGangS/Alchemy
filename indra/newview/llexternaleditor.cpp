@@ -93,6 +93,12 @@ LLExternalEditor::EErrorCode LLExternalEditor::setCommand(const std::string& env
 
 LLExternalEditor::EErrorCode LLExternalEditor::run(const std::string& file_path)
 {
+    std::map<std::string, std::string> params = {};
+    return this->run(file_path, params);
+}
+
+LLExternalEditor::EErrorCode LLExternalEditor::run(const std::string& file_path, std::map<std::string, std::string>& extra_parameters)
+{
     if (std::string(mProcessParams.executable).empty() || mProcessParams.args.empty())
     {
         LL_WARNS() << "Editor command not set" << LL_ENDL;
@@ -108,6 +114,11 @@ LLExternalEditor::EErrorCode LLExternalEditor::run(const std::string& file_path)
     {
         std::string fixed(arg);
         LLStringUtil::replaceString(fixed, sFilenameMarker, file_path);
+        if (!extra_parameters.empty()) {
+            for (auto const& value : extra_parameters) {
+                LLStringUtil::replaceString(fixed, value.first, value.second);
+            }
+        }
         params.args.add(fixed);
     }
 
