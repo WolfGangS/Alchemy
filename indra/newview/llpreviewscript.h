@@ -246,7 +246,7 @@ public:
     BOOL handleKeyHere(KEY key, MASK mask);
 
 protected:
-    std::string     getTmpFileName(const std::string& script_name);
+    std::string     getTmpFileName(const std::string& script_name, bool lua = false);
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
     /*virtual*/ void onBackupTimer();
 // [/SL:KB]

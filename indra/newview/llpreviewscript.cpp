@@ -633,7 +633,7 @@ void LLScriptEdCore::processKeywords(bool luau_language)
     if (mLSLPreprocEnabled && mPostEditor)
     {
         mPostEditor->clearSegments();
-        mPostEditor->initKeywords();
+        mPostEditor->initKeywords(luau_language);
         mPostEditor->loadKeywords();
     }
 }
@@ -1314,7 +1314,7 @@ void LLScriptEdCore::openInExternalEditor()
         {
             script_name.erase(std::remove(script_name.begin(), script_name.end(), *c), script_name.end());
         }
-        std::string filename = mContainer->getTmpFileName(script_name);
+        std::string filename = mContainer->getTmpFileName(script_name, mEditor->getIsLuauLanguage());
 
         // Save the script to a temporary file.
         if (!writeToFile(filename, mLSLPreprocEnabled))
@@ -1763,7 +1763,7 @@ void LLScriptEdContainer::onBackupTimer()
 }
 // [/SL:KB]
 
-std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name)
+std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name, bool lua)
 {
     // Take script inventory item id (within the object inventory)
     // to consideration so that it's possible to edit multiple scripts
@@ -1775,13 +1775,17 @@ std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name)
     LLMD5 script_id_hash((const U8 *)script_id.c_str());
     script_id_hash.hex_digest(script_id_hash_str);
 
+    static LLCachedControl<std::string> lauFileEnding(gSavedSettings, "WGExternalEditorLuaFileEnding", ".lua");
+
+    std::string file_ending = lua ? utf8str_tolower(lauFileEnding) : ".lsl";
+
     if (script_name.empty())
     {
-        return std::string(LLFile::tmpdir()) + "sl_script_" + script_id_hash_str + ".lsl";
+        return std::string(LLFile::tmpdir()) + "sl_script_" + script_id_hash_str + file_ending;
     }
     else
     {
-        return std::string(LLFile::tmpdir()) + "sl_script_" + script_name + "_" + script_id_hash_str + ".lsl";
+        return std::string(LLFile::tmpdir()) + "sl_script_" + script_name + "_" + script_id_hash_str + file_ending;
     }
 }
 
@@ -2289,7 +2293,7 @@ LLLiveLSLEditor::LLLiveLSLEditor(const LLSD& key) :
 
 BOOL LLLiveLSLEditor::postBuild()
 {
-    mResetButton = getChild<LLButton>("reset");
+    mResetButton = getChild<LLButton>("Reset");
     mResetButton->setClickedCallback([&](LLUICtrl*, const LLSD&) { onReset(); });
 
     mRunningCheckbox = getChild<LLCheckBoxCtrl>("running");
