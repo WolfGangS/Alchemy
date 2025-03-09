@@ -73,7 +73,6 @@ public:
      * @return EC_SUCCESS on success, error code on error.
      */
     EErrorCode run(const std::string& file_path);
-    EErrorCode run(const std::string& file_path, std::map<std::string, std::string>& extra_parameters);
 
     /**
      * Get a meaningful error message for the given status code.

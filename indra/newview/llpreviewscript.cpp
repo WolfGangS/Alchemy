@@ -1331,15 +1331,7 @@ void LLScriptEdCore::openInExternalEditor()
         mLiveFile = new LLLiveLSLFile(filename, boost::bind(&LLScriptEdContainer::onExternalChange, mContainer, _1));
         mLiveFile->addToEventTimer();
 
-        std::string agent_id_string;
-        gAgent.getID().toString(agent_id_string);
-
-        std::map<std::string, std::string> params = {
-            {"%l", mEditor->getIsLuauLanguage() ? "luau" : "lsl"},
-            {"%k", agent_id_string}
-        };
-
-        status = ed.run(filename, params);
+        status = ed.run(filename);
         if (status != LLExternalEditor::EC_SUCCESS)
         {
             msg = LLExternalEditor::getErrorMessage(status);
