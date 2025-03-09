@@ -241,9 +241,10 @@ LLColor4 LLKeywords::getColorGroup(std::string_view key_in)
     return script_colors[ScriptText].get();
 }
 
-void LLKeywords::initialize(LLSD SyntaxXML)
+void LLKeywords::initialize(LLSD SyntaxXML, bool luau_language)
 {
     mSyntax = SyntaxXML;
+    mLuauLanguage = luau_language;
 
     std::string preproc_tokens = gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "keywords_lsl_preproc.xml");
     if (gDirUtilp->fileExists(preproc_tokens))
@@ -287,9 +288,22 @@ void LLKeywords::processTokens()
     static LLUIColor syntax_lsl_literal_color = LLUIColorTable::instance().getColor("SyntaxLslStringLiteral");
     std::string delimiter;
     addToken(LLKeywordToken::TT_LABEL, "@", getColorGroup("misc-flow-label"), "Label\nTarget for jump statement", delimiter );
-    addToken(LLKeywordToken::TT_ONE_SIDED_DELIMITER, "//", syntax_lsl_comment_color, "Comment (single-line)\nNon-functional commentary or disabled code", delimiter );
-    addToken(LLKeywordToken::TT_TWO_SIDED_DELIMITER, "/*", syntax_lsl_comment_color, "Comment (multi-line)\nNon-functional commentary or disabled code", "*/" );
+// --    addToken(LLKeywordToken::TT_ONE_SIDED_DELIMITER, "//", syntax_lsl_comment_color, "Comment (single-line)\nNon-functional commentary or disabled code", delimiter );
+    // addToken(LLKeywordToken::TT_TWO_SIDED_DELIMITER, "/*", syntax_lsl_comment_color, "Comment (multi-line)\nNon-functional commentary or disabled code", "*/" );
     addToken(LLKeywordToken::TT_DOUBLE_QUOTATION_MARKS, "\"", syntax_lsl_literal_color, "String literal", "\"" );
+
+    if (mLuauLanguage)
+    {
+        // Add Lua-style comments
+        addToken(LLKeywordToken::TT_ONE_SIDED_DELIMITER, "--", LLUIColorTable::instance().getColor("SyntaxLslComment"), "Comment (Lua-style single-line)\nNon-functional commentary or disabled code", delimiter);
+        addToken(LLKeywordToken::TT_TWO_SIDED_DELIMITER, "--[[", LLUIColorTable::instance().getColor("SyntaxLslComment"), "Comment (Lua-style multi-line)\nNon-functional commentary or disabled code", "]]");
+    }
+    else
+    {
+        // Add LSL-style comments
+        addToken(LLKeywordToken::TT_ONE_SIDED_DELIMITER, "//", LLUIColorTable::instance().getColor("SyntaxLslComment"), "Comment (single-line)\nNon-functional commentary or disabled code", delimiter);
+        addToken(LLKeywordToken::TT_TWO_SIDED_DELIMITER, "/*", LLUIColorTable::instance().getColor("SyntaxLslComment"), "Comment (multi-line)\nNon-functional commentary or disabled code", "*/");
+    }
 
     for (const auto& llsd_pair : mSyntax.asMap())
     {
@@ -680,7 +694,7 @@ void LLKeywords::findSegments(std::vector<LLTextSegmentPtr>* seg_list, const LLW
 
                         if( *cur )
                         {
-                            cur += cur_delimiter->getLengthHead();
+                            cur += cur_delimiter->getLengthTail();
                             seg_end = seg_start + between_delimiters + cur_delimiter->getLengthHead() + cur_delimiter->getLengthTail();
                         }
                         else
@@ -721,7 +735,7 @@ void LLKeywords::findSegments(std::vector<LLTextSegmentPtr>* seg_list, const LLW
             if( !iswalnum( prev ) && (prev != '_') && (prev != '#'))
             {
                 const llwchar* p = cur;
-                while( *p && ( iswalnum( *p ) || (*p == '_') || (*p == '#') ) )
+                while( *p && ( iswalnum( *p ) || (*p == '_') || (*p == '#') || (mLuauLanguage && *p == '.')) )
                 {
                     p++;
                 }

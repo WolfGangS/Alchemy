@@ -105,6 +105,7 @@ public:
     void            initializeKeywords();
     void            initMenu();
     void            processKeywords();
+    void            processKeywords(bool luau_language);
     void            processLoaded();
 
     virtual void    draw();
@@ -218,6 +219,7 @@ private:
 
     LLTextBox*      mLineCol;
     LLButton*       mSaveBtn;
+    LLComboBox*     mCompileTarget = nullptr;
     // NaCl - LSL Preprocessor
     std::unique_ptr<FSLSLPreprocessor>  mLSLProc;
     FSLSLPreProcViewer* mPostEditor;
@@ -282,6 +284,7 @@ protected:
 
     virtual void loadAsset();
     /*virtual*/ void saveIfNeeded(bool sync = true);
+    void onCompileTargetChanged();
 
 //  static void onSearchReplace(void* userdata);
     static void onLoad(void* userdata);
@@ -326,7 +329,8 @@ public:
     void setIsNew() { mIsNew = TRUE; }
 
     static void setAssociatedExperience( LLHandle<LLLiveLSLEditor> editor, const LLSD& experience );
-    static void onToggleExperience(LLUICtrl *ui, void* userdata);
+    void onToggleExperience();
+    void onViewProfile();
     static void onViewProfile(LLUICtrl *ui, void* userdata);
 
     void setExperienceIds(const LLSD& experience_ids);
@@ -337,6 +341,8 @@ public:
     void addAssociatedExperience(const LLSD& experience);
 
     void setObjectName(std::string name) { mObjectName = name; }
+
+    bool getIsModifiable() const { return mIsModifiable; } // Evaluated on load assert
 
 // [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-2.3)
     LLScriptEditor* getEditor() { return (mScriptEd) ? mScriptEd->mEditor : NULL; }
@@ -350,7 +356,6 @@ private:
     virtual void loadAsset();
     void loadAsset(BOOL is_new);
     /*virtual*/ void saveIfNeeded(bool sync = true);
-    BOOL monoChecked() const;
 
 
 //  static void onSearchReplace(void* userdata);
@@ -360,8 +365,8 @@ private:
     static void onLoadComplete(const LLUUID& asset_uuid,
                                LLAssetType::EType type,
                                void* user_data, S32 status, LLExtStat ext_status);
-    static void onRunningCheckboxClicked(LLUICtrl*, void* userdata);
-    static void onReset(void* userdata);
+    void onRunningCheckboxClicked();
+    void onReset();
 
     void loadScriptText(const LLUUID &uuid, LLAssetType::EType type);
 
@@ -369,7 +374,7 @@ private:
 
     static void* createScriptEdPanel(void* userdata);
 
-    static void onMonoCheckboxClicked(LLUICtrl*, void* userdata);
+    void onCompileTargetChanged();
 
     static void finishLSLUpload(LLUUID itemId, LLUUID taskId, LLUUID newAssetId, LLSD response, bool isRunning);
     static void receiveExperienceIds(LLSD result, LLHandle<LLLiveLSLEditor> parent);
@@ -377,10 +382,10 @@ private:
 private:
     bool                mIsNew;
     //LLUUID mTransmitID;
-    LLCheckBoxCtrl*     mRunningCheckbox;
+    // LLCheckBoxCtrl*     mRunningCheckbox;
     BOOL                mAskedForRunningInfo;
     BOOL                mHaveRunningInfo;
-    LLButton*           mResetButton;
+    // LLButton*           mResetButton;
     LLPointer<LLViewerInventoryItem> mItem;
     BOOL                mCloseAfterSave;
     // need to save both text and script, so need to decide when done
@@ -388,16 +393,15 @@ private:
 
     BOOL                mIsSaving;
 
-    BOOL getIsModifiable() const { return mIsModifiable; } // Evaluated on load assert
-
-    LLCheckBoxCtrl* mMonoCheckbox;
     BOOL mIsModifiable;
 
+    LLButton*           mResetButton       { nullptr };
+    LLCheckBoxCtrl*     mRunningCheckbox   { nullptr };
+    LLComboBox*         mExperiences       { nullptr };
+    LLCheckBoxCtrl*     mExperienceEnabled { nullptr };
+    LLButton*           mViewProfileButton { nullptr };
 
-    LLComboBox*     mExperiences;
-    LLCheckBoxCtrl* mExperienceEnabled;
     LLSD            mExperienceIds;
-
     LLHandle<LLFloater> mExperienceProfile;
     std::string mObjectName;
 };

@@ -2794,18 +2794,18 @@ void register_viewer_callbacks(LLMessageSystem* msg)
     msg->setHandlerFuncFast(_PREHASH_RegionInfo, LLViewerRegion::processRegionInfo);
 
     msg->setHandlerFuncFast(_PREHASH_ChatFromSimulator,     process_chat_from_simulator);
-    msg->setHandlerFuncFast(_PREHASH_KillObject,                process_kill_object,    NULL);
-    msg->setHandlerFuncFast(_PREHASH_SimulatorViewerTimeMessage,    process_time_synch,     NULL);
+    msg->setHandlerFuncFast(_PREHASH_KillObject,                process_kill_object);
+    msg->setHandlerFuncFast(_PREHASH_SimulatorViewerTimeMessage,    process_time_synch);
     msg->setHandlerFuncFast(_PREHASH_EnableSimulator,           process_enable_simulator);
     msg->setHandlerFuncFast(_PREHASH_DisableSimulator,          process_disable_simulator);
-    msg->setHandlerFuncFast(_PREHASH_KickUser,                  process_kick_user,      NULL);
+    msg->setHandlerFuncFast(_PREHASH_KickUser,                  process_kick_user);
 
     msg->setHandlerFuncFast(_PREHASH_CrossedRegion, process_crossed_region);
     msg->setHandlerFuncFast(_PREHASH_TeleportFinish, process_teleport_finish);
 
     msg->setHandlerFuncFast(_PREHASH_AlertMessage,             process_alert_message);
     msg->setHandlerFuncFast(_PREHASH_AgentAlertMessage, process_agent_alert_message);
-    msg->setHandlerFuncFast(_PREHASH_MeanCollisionAlert,             process_mean_collision_alert_message,  NULL);
+    msg->setHandlerFuncFast(_PREHASH_MeanCollisionAlert,             process_mean_collision_alert_message);
     msg->setHandlerFuncFast(_PREHASH_ViewerFrozenMessage,             process_frozen_message);
 
     msg->setHandlerFuncFast(_PREHASH_NameValuePair,         process_name_value);
@@ -2820,16 +2820,15 @@ void register_viewer_callbacks(LLMessageSystem* msg)
 
     msg->setHandlerFuncFast(_PREHASH_ImprovedInstantMessage,    process_improved_im);
     msg->setHandlerFuncFast(_PREHASH_ScriptQuestion,            process_script_question);
-    msg->setHandlerFuncFast(_PREHASH_ObjectProperties,          LLSelectMgr::processObjectProperties, NULL);
-    msg->setHandlerFuncFast(_PREHASH_ObjectPropertiesFamily,    LLSelectMgr::processObjectPropertiesFamily, NULL);
+    msg->setHandlerFuncFast(_PREHASH_ObjectProperties,          LLSelectMgr::processObjectProperties);
+    msg->setHandlerFuncFast(_PREHASH_ObjectPropertiesFamily,    LLSelectMgr::processObjectPropertiesFamily);
     msg->setHandlerFuncFast(_PREHASH_ForceObjectSelect, LLSelectMgr::processForceObjectSelect);
 
-    msg->setHandlerFuncFast(_PREHASH_MoneyBalanceReply,     process_money_balance_reply,    NULL);
-    msg->setHandlerFuncFast(_PREHASH_CoarseLocationUpdate,      LLWorld::processCoarseUpdate, NULL);
-    msg->setHandlerFuncFast(_PREHASH_ReplyTaskInventory,        LLViewerObject::processTaskInv, NULL);
-    msg->setHandlerFuncFast(_PREHASH_DerezContainer,            process_derez_container, NULL);
-    msg->setHandlerFuncFast(_PREHASH_ScriptRunningReply,
-                        &LLLiveLSLEditor::processScriptRunningReply);
+    msg->setHandlerFuncFast(_PREHASH_MoneyBalanceReply,         process_money_balance_reply);
+    msg->setHandlerFuncFast(_PREHASH_CoarseLocationUpdate,      LLWorld::processCoarseUpdate);
+    msg->setHandlerFuncFast(_PREHASH_ReplyTaskInventory,        LLViewerObject::processTaskInv);
+    msg->setHandlerFuncFast(_PREHASH_DerezContainer,            process_derez_container);
+    msg->setHandlerFuncFast(_PREHASH_ScriptRunningReply,        LLLiveLSLEditor::processScriptRunningReply);
 
     msg->setHandlerFuncFast(_PREHASH_DeRezAck, process_derez_ack);
 

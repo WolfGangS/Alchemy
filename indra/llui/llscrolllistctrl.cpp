@@ -1434,6 +1434,18 @@ LLScrollListItem* LLScrollListCtrl::getItemByLabel(const std::string& label, BOO
     return NULL;
 }
 
+LLScrollListItem* LLScrollListCtrl::getItemByValue(const std::string& value)
+{
+    for (LLScrollListItem* item : mItemList)
+    {
+        if (item->getValue().asString() == value)
+        {
+            return item;
+        }
+    }
+
+    return NULL;
+}
 
 BOOL LLScrollListCtrl::selectItemByPrefix(const std::string& target, BOOL case_sensitive, S32 column)
 {

@@ -365,14 +365,14 @@ void LLFloaterHexEditor::onClickSave()
 
     switch(item->getType())
     {
-    case LLAssetType::AT_LSL_TEXT:
-    {
-        url = gAgent.getRegion()->getCapability("UpdateScriptAgent");
-            uploadInfo = std::make_shared<LLScriptAssetUpload>(mItem->getUUID(),
-                                                               std::string(reinterpret_cast<char*>(buffer.get())),
-                                                               boost::bind(&LLFloaterHexEditor::onSavedAsset, this, _1, _4), nullptr);
-        break;
-    }
+    // case LLAssetType::AT_LSL_TEXT:
+    // {
+    //     url = gAgent.getRegion()->getCapability("UpdateScriptAgent");
+    //         uploadInfo = std::make_shared<LLScriptAssetUpload>(mItem->getUUID(),
+    //                                                            std::string(reinterpret_cast<char*>(buffer.get())),
+    //                                                            boost::bind(&LLFloaterHexEditor::onSavedAsset, this, _1, _4), nullptr);
+    //     break;
+    // }
     case LLAssetType::AT_GESTURE:
     {
         url = gAgent.getRegion()->getCapability("UpdateGestureAgentInventory");
