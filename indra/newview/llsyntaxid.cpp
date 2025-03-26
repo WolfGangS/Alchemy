@@ -111,7 +111,7 @@ void LLSyntaxIdLSL::fetchKeywordsFile(const std::string& filespec)
 {
     LLCoros::instance().launch("LLSyntaxIdLSL::fetchKeywordsFileCoro",
         boost::bind(&LLSyntaxIdLSL::fetchKeywordsFileCoro, this, mCapabilityURL, filespec));
-    LL_DEBUGS("SyntaxLSL") << "LSLSyntaxId capability URL is: " << mCapabilityURL << ". Filename to use is: '" << filespec << "'." << LL_ENDL;
+    LL_INFOS("SyntaxLSL") << "LSLSyntaxId capability URL is: " << mCapabilityURL << ". Filename to use is: '" << filespec << "'." << LL_ENDL;
 }
 
 //-----------------------------------------------------------------------------

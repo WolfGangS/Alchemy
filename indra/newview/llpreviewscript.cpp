@@ -93,6 +93,7 @@
 #include "lltoggleablemenu.h"
 #include "llmenubutton.h"
 #include "llinventoryfunctions.h"
+#include <regex>
 #include "llviewernetwork.h"
 // [RLVa:KB] - Checked: 2011-05-22 (RLVa-1.3.1a)
 #include "rlvhandler.h"
@@ -103,19 +104,6 @@
 #include "fslslpreprocviewer.h"
 // NaCl End
 
-const std::string HELLO_LSL =
-    "default\n"
-    "{\n"
-    "   state_entry()\n"
-    "   {\n"
-    "       llSay(0, \"Hello, Avatar!\");\n"
-    "   }\n"
-    "\n"
-    "   touch_start(integer total_number)\n"
-    "   {\n"
-    "       llSay(0, \"Touched.\");\n"
-    "   }\n"
-    "}\n";
 const std::string HELP_LSL_PORTAL_TOPIC = "LSL_Portal";
 
 const std::string DEFAULT_SCRIPT_NAME = "New Script"; // *TODO:Translate?
@@ -152,6 +140,19 @@ static bool have_lua_enabled(const LLUUID& object_id)
     }
 
     return false;
+}
+
+// TEMPORARY: Quick check to see if the code is Lua
+// since we don't have another way to determine the language yet
+static bool is_lua_script(const std::string& code)
+{
+    // Check for LSL's signature "default" state pattern
+    std::regex lsl_pattern("\\s*default\\s*\\{");
+    if (std::regex_search(code, lsl_pattern))
+        return false;
+
+    // "default" state not found, assuming it's Lua
+    return true;
 }
 
 /// ---------------------------------------------------------------------------
@@ -408,8 +409,8 @@ LLScriptEdCore::LLScriptEdCore(
     LLScriptEdContainer* container,
     const std::string& sample,
     const LLHandle<LLFloater>& floater_handle,
-    void (*load_callback)(void*),
-    void (*save_callback)(void*, BOOL, bool),
+    script_ed_callback_t load_callback,
+    save_callback_t save_callback,
 //  void (*search_replace_callback) (void* userdata),
     void* userdata,
     bool live,
@@ -1845,7 +1846,7 @@ void* LLPreviewLSL::createScriptEdPanel(void* userdata)
 
     self->mScriptEd =  new LLScriptEdCore(
                                    self,
-                                   HELLO_LSL,
+                                   std::string(),
                                    self->getHandle(),
                                    LLPreviewLSL::onLoad,
                                    LLPreviewLSL::onSave,
@@ -2007,12 +2008,6 @@ void LLPreviewLSL::loadAsset()
         }
         getChildView("lock")->setVisible( !is_modifiable);
         mScriptEd->getChildView("Insert...")->setEnabled(is_modifiable);
-    }
-    else
-    {
-        mScriptEd->setScriptText(std::string(HELLO_LSL), TRUE);
-        mScriptEd->setEnableEditing(TRUE);
-        mAssetStatus = PREVIEW_ASSET_LOADED;
     }
 }
 
@@ -2221,6 +2216,12 @@ void LLPreviewLSL::onLoadComplete(const LLUUID& asset_uuid, LLAssetType::EType t
             preview->mScriptEd->setAssetID(asset_uuid);
             preview->mAssetStatus = PREVIEW_ASSET_LOADED;
 
+            // Temporary hack to determine if the script is LSL or SLua when loaded from the inventory.
+            bool is_lua = is_lua_script(std::string(buffer.begin(), buffer.end()));
+            preview->mScriptEd->mEditor->setLuauLanguage(is_lua);
+            preview->mScriptEd->mCompileTarget->setValue(is_lua ? "luau" : "lsl-luau");
+            preview->mScriptEd->processKeywords(is_lua);
+
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
             // Start the timer which will perform regular backup saves
             if (!preview->isBackupRunning())
@@ -2265,7 +2266,7 @@ void* LLLiveLSLEditor::createScriptEdPanel(void* userdata)
 
     self->mScriptEd =  new LLScriptEdCore(
                                    self,
-                                   HELLO_LSL,
+                                   std::string(),
                                    self->getHandle(),
                                    &LLLiveLSLEditor::onLoad,
                                    &LLLiveLSLEditor::onSave,
@@ -2460,26 +2461,6 @@ void LLLiveLSLEditor::loadAsset()
             gMessageSystem->sendReliable(host);
             */
         }
-    }
-    else
-    {
-        mScriptEd->setScriptText(std::string(HELLO_LSL), TRUE);
-        mScriptEd->enableSave(FALSE);
-        LLPermissions perm;
-        perm.init(gAgent.getID(), gAgent.getID(), LLUUID::null, gAgent.getGroupID());
-        perm.initMasks(PERM_ALL, PERM_ALL, PERM_NONE, PERM_NONE, PERM_MOVE | PERM_TRANSFER);
-        mItem = new LLViewerInventoryItem(mItemUUID,
-                                          mObjectUUID,
-                                          perm,
-                                          LLUUID::null,
-                                          LLAssetType::AT_LSL_TEXT,
-                                          LLInventoryType::IT_LSL,
-                                          DEFAULT_SCRIPT_NAME,
-                                          DEFAULT_SCRIPT_DESC,
-                                          LLSaleInfo::DEFAULT,
-                                          LLInventoryItemFlags::II_FLAGS_NONE,
-                                          time_corrected());
-        mAssetStatus = PREVIEW_ASSET_LOADED;
     }
 
     requestExperiences();

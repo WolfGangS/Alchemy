@@ -86,6 +86,9 @@ class LLScriptEdCore final : public LLPanel
     // NaCl - LSL Preprocessor
     friend class FSLSLPreprocessor;
     // NaCl End
+public:
+    typedef boost::function<void(void*)> script_ed_callback_t;
+    typedef boost::function<void(void*, BOOL, bool)> save_callback_t;
 
 protected:
     // Supposed to be invoked only by the container.
@@ -93,8 +96,8 @@ protected:
         LLScriptEdContainer* container,
         const std::string& sample,
         const LLHandle<LLFloater>& floater_handle,
-        void (*load_callback)(void* userdata),
-        void (*save_callback)(void* userdata, BOOL close_after_save, bool sync),
+        script_ed_callback_t load_callback,
+        save_callback_t save_callback,
 //      void (*search_replace_callback)(void* userdata),
         void* userdata,
         bool live,
@@ -163,6 +166,9 @@ public:
     virtual BOOL handleKeyHere(KEY key, MASK mask);
     void selectAll() { mEditor->selectAll(); }
 
+    void            enableSave(bool b) { mEnableSave = b; }
+    bool            hasChanged();
+
   private:
     // NaCl - LSL Preprocessor
     LLCachedControl<bool> mLSLPreprocEnabled;
@@ -172,11 +178,7 @@ public:
     void        onBtnDynamicHelp();
     void        onBtnUndoChanges();
 
-    bool        hasChanged();
-
     void selectFirstError();
-
-    void enableSave(BOOL b) {mEnableSave = b;}
 
 protected:
     void deleteBridges();
@@ -195,8 +197,8 @@ private:
     LLMenuBarGL*    mMenuBar;
 // [/SL:KB]
     LLScriptEditor* mEditor;
-    void            (*mLoadCallback)(void* userdata);
-    void            (*mSaveCallback)(void* userdata, BOOL close_after_save, bool sync);
+    script_ed_callback_t mLoadCallback;
+    save_callback_t mSaveCallback;
 //  void            (*mSearchReplaceCallback) (void* userdata);
     void*           mUserdata;
     LLComboBox      *mFunctions;

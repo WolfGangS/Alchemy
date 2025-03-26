@@ -275,7 +275,7 @@
       name="compile_target_lsl_luau"
       value="lsl-luau" />
     <combo_box.item
-      label="Lua"
+      label="SLua"
       name="compile_target_luau"
       value="luau" />
   </combo_box>
