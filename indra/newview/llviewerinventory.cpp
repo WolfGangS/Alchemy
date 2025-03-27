@@ -1072,19 +1072,28 @@ void create_script_cb(const LLUUID& inv_item)
             // This temporary workaround should be removed after a server-side fix.
             // See https://github.com/secondlife/viewer/issues/3731 for more information.
             //
-            const std::string hello_lua_script = gSavedSettings.getString("WGSLuaDefaultScript");
-
-            std::string url = gAgent.getRegion()->getCapability("UpdateScriptAgent");
-            if (!url.empty())
+            LLViewerRegion* region = gAgent.getRegion();
+            if (region && region->simulatorFeaturesReceived())
             {
-                LLResourceUploadInfo::ptr_t uploadInfo(std::make_shared<LLScriptAssetUpload>(
-                    item->getUUID(),
-                    "luau",
-                    hello_lua_script,
-                    nullptr,
-                    nullptr));
+                LLSD simulatorFeatures;
+                region->getSimulatorFeatures(simulatorFeatures);
+                if (simulatorFeatures["LuaScriptsEnabled"].asBoolean())
+                {
+                    const std::string hello_lua_script = gSavedSettings.getString("WGSLuaDefaultScript");
 
-                LLViewerAssetUpload::EnqueueInventoryUpload(url, uploadInfo);
+                    std::string url = gAgent.getRegion()->getCapability("UpdateScriptAgent");
+                    if (!url.empty())
+                    {
+                        LLResourceUploadInfo::ptr_t uploadInfo(std::make_shared<LLScriptAssetUpload>(
+                            item->getUUID(),
+                            "luau",
+                            hello_lua_script,
+                            nullptr,
+                            nullptr));
+
+                        LLViewerAssetUpload::EnqueueInventoryUpload(url, uploadInfo);
+                    }
+                }
             }
             //
             // End hack
