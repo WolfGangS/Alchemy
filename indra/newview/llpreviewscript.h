@@ -212,7 +212,6 @@ private:
     S32             mLiveHelpHistorySize;
     BOOL            mEnableSave;
     BOOL            mHasScriptData;
-    LLLiveLSLFile*  mLiveFile;
     LLUUID          mAssociatedExperience;
     BOOL            mScriptRemoved;
     BOOL            mSaveDialogShown;
@@ -243,20 +242,25 @@ class LLScriptEdContainer : public LLPreview
 
 public:
     LLScriptEdContainer(const LLSD& key);
-    LLScriptEdContainer(const LLSD& key, const bool live);
+    virtual ~LLScriptEdContainer();
 
     BOOL handleKeyHere(KEY key, MASK mask);
 
 protected:
-    std::string     getTmpFileName(const std::string& script_name, bool lua = false);
+    std::string     getTmpFileName(const std::string& script_name);
+    std::string getErrorLogFileName(const std::string& script_path);
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
     /*virtual*/ void onBackupTimer();
 // [/SL:KB]
 
     bool            onExternalChange(const std::string& filename);
     virtual void    saveIfNeeded(bool sync = true) = 0;
+    bool            logErrorsToFile(const LLSD& compile_errors);
+    bool            isOpenInExternalEditor() const { return mLiveFile != nullptr; }
 
     LLScriptEdCore*     mScriptEd;
+    LLLiveLSLFile*      mLiveFile = nullptr;
+    LLLiveLSLFile*      mLiveLogFile = nullptr;
 };
 
 // Used to view and edit an LSL script from your inventory.

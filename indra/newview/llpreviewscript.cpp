@@ -56,6 +56,7 @@
 #include "llslider.h"
 #include "lltooldraganddrop.h"
 #include "llfilesystem.h"
+#include "lllogchat.h"
 
 #include "llagent.h"
 #include "llmenugl.h"
@@ -430,7 +431,6 @@ LLScriptEdCore::LLScriptEdCore(
     mLastHelpToken(NULL),
     mLiveHelpHistorySize(0),
     mEnableSave(FALSE),
-    mLiveFile(NULL),
     mLSLPreprocEnabled(LLCachedControl<bool>(gSavedSettings,"AlchemyLSLPreprocessor", FALSE)),
     mLive(live),
     mContainer(container),
@@ -468,7 +468,6 @@ LLScriptEdCore::~LLScriptEdCore()
 //      delete script_search;
 //  }
 
-    delete mLiveFile;
     if (mSyntaxIDConnection.connected())
     {
         mSyntaxIDConnection.disconnect();
@@ -857,13 +856,13 @@ bool LLScriptEdCore::writeToFile(const std::string& filename, bool unprocessed)
 void LLScriptEdCore::sync()
 {
     // Sync with external editor.
-    if (mLiveFile)
+    if (mContainer->mLiveFile)
     {
-        std::string tmp_file = mLiveFile->filename();
+        std::string tmp_file = mContainer->mLiveFile->filename();
         llstat s;
         if (LLFile::stat(tmp_file, &s) == 0) // file exists
         {
-            mLiveFile->ignoreNextUpdate();
+            mContainer->mLiveFile->ignoreNextUpdate();
             writeToFile(tmp_file, mLSLPreprocEnabled);
         }
     }
@@ -1306,7 +1305,11 @@ void LLScriptEdCore::openInExternalEditor()
         // Script contents clobbered when Edit button
         // clicked with preprocessor active. Fix from NaCl (code moved
         // from above).
-        delete mLiveFile; // deletes file
+        if (mContainer->mLiveFile)
+        {
+            // If already open in an external editor, just return
+            return;
+        }
 
         // Generate a suitable filename
         std::string script_name = mScriptName;
@@ -1315,7 +1318,7 @@ void LLScriptEdCore::openInExternalEditor()
         {
             script_name.erase(std::remove(script_name.begin(), script_name.end(), *c), script_name.end());
         }
-        std::string filename = mContainer->getTmpFileName(script_name, mEditor->getIsLuauLanguage());
+        std::string filename = mContainer->getTmpFileName(script_name);
 
         // Save the script to a temporary file.
         if (!writeToFile(filename, mLSLPreprocEnabled))
@@ -1324,13 +1327,13 @@ void LLScriptEdCore::openInExternalEditor()
             // and not accounted for, name is too long or some other issue,
             // try file that doesn't include script name
             script_name.clear();
-            filename = mContainer->getTmpFileName(script_name, mEditor->getIsLuauLanguage());
+            filename = mContainer->getTmpFileName(script_name);
             writeToFile(filename, mLSLPreprocEnabled);
         }
 
         // Start watching file changes.
-        mLiveFile = new LLLiveLSLFile(filename, boost::bind(&LLScriptEdContainer::onExternalChange, mContainer, _1));
-        mLiveFile->addToEventTimer();
+        mContainer->mLiveFile = new LLLiveLSLFile(filename, boost::bind(&LLScriptEdContainer::onExternalChange, mContainer, _1));
+        mContainer->mLiveFile->addToEventTimer();
 
         status = ed.run(filename);
         if (status != LLExternalEditor::EC_SUCCESS)
@@ -1627,8 +1630,8 @@ void LLLiveLSLEditor::updateExperiencePanel()
     {
         mExperienceEnabled->setToolTip(getString("experience_enabled"));
         mExperienceEnabled->setEnabled(getIsModifiable());
-        mExperiences->setVisible(TRUE);
         mExperienceEnabled->set(TRUE);
+        mExperiences->setVisible(TRUE);
         mViewProfileButton->setToolTip(getString("show_experience_profile"));
         buildExperienceList();
     }
@@ -1748,8 +1751,19 @@ void LLLiveLSLEditor::receiveExperienceIds(LLSD result, LLHandle<LLLiveLSLEditor
 
 LLScriptEdContainer::LLScriptEdContainer(const LLSD& key) :
     LLPreview(key)
-,   mScriptEd(NULL)
+,   mScriptEd(nullptr)
+,   mLiveFile(nullptr)
+,   mLiveLogFile(nullptr)
 {
+}
+
+LLScriptEdContainer::~LLScriptEdContainer()
+{
+    delete mLiveFile;
+    mLiveFile = nullptr;
+
+    delete mLiveLogFile;
+    mLiveLogFile = nullptr;
 }
 
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
@@ -1764,7 +1778,7 @@ void LLScriptEdContainer::onBackupTimer()
 }
 // [/SL:KB]
 
-std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name, bool lua)
+std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name)
 {
     // Take script inventory item id (within the object inventory)
     // to consideration so that it's possible to edit multiple scripts
@@ -1778,7 +1792,7 @@ std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name, 
 
     static LLCachedControl<std::string> lauFileEnding(gSavedSettings, "ExternalEditorLuaFileEnding", ".lua");
 
-    std::string file_ending = lua ? utf8str_tolower(lauFileEnding) : ".lsl";
+    std::string file_ending = mScriptEd->mEditor->getIsLuauLanguage() ? utf8str_tolower(lauFileEnding) : ".lsl";
 
     if (script_name.empty())
     {
@@ -1788,6 +1802,60 @@ std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name, 
     {
         return std::string(LLFile::tmpdir()) + "sl_script_" + script_name + "_" + script_id_hash_str + file_ending;
     }
+}
+
+std::string LLScriptEdContainer::getErrorLogFileName(const std::string& script_path)
+{
+    if (script_path.empty())
+    {
+        return std::string();
+    }
+
+    return script_path + ".log";
+}
+
+bool LLScriptEdContainer::logErrorsToFile(const LLSD& compile_errors)
+{
+    if (!isOpenInExternalEditor())
+    {
+        return false;
+    }
+
+    std::string script_path = getTmpFileName(mScriptEd->mScriptName);
+    std::string log_path = getErrorLogFileName(script_path);
+
+    llofstream file(log_path.c_str());
+    if (!file.is_open())
+    {
+        LL_WARNS() << "Unable to open error log file: " << log_path << LL_ENDL;
+        return false;
+    }
+
+    // Write timestamp
+    std::string timestamp = LLLogChat::timestamp2LogString(0, true);
+    file << "// " << timestamp << "\n\n";
+
+    // Write errors
+    for (LLSD::array_const_iterator line = compile_errors.beginArray();
+         line < compile_errors.endArray();
+         line++)
+    {
+        std::string error_message = line->asString();
+        LLStringUtil::stripNonprintable(error_message);
+        file << error_message << "\n";
+    }
+
+    file.close();
+
+    // Create a log file handler if we don't already have one,
+    // this is needed to delete the temporary log file properly
+    if (!mLiveLogFile && !log_path.empty())
+    {
+        // Empty callback since we don't need to react to file changes
+        mLiveLogFile = new LLLiveLSLFile(log_path, [](const std::string& filename) { return true; });
+    }
+
+    return true;
 }
 
 bool LLScriptEdContainer::onExternalChange(const std::string& filename)
@@ -1919,6 +1987,14 @@ void LLPreviewLSL::callbackLSLCompileSucceeded()
     mScriptEd->mErrorList->addCommentText(LLTrans::getString("CompileSuccessful"));
     mScriptEd->mErrorList->addCommentText(LLTrans::getString("SaveComplete"));
 
+    if (isOpenInExternalEditor())
+    {
+        LLSD success_msg;
+        success_msg.append(LLTrans::getString("CompileSuccessful"));
+        success_msg.append(LLTrans::getString("SaveComplete"));
+        logErrorsToFile(success_msg);
+    }
+
     mScriptEd->mCompiling = false;
 
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
@@ -1948,6 +2024,12 @@ void LLPreviewLSL::callbackLSLCompileFailed(const LLSD& compile_errors)
         row["columns"][0]["font"] = "OCRA";
         mScriptEd->mErrorList->addElement(row);
     }
+
+    if (isOpenInExternalEditor())
+    {
+        logErrorsToFile(compile_errors);
+    }
+
     mScriptEd->selectFirstError();
 
     mScriptEd->mCompiling = false;
@@ -2327,6 +2409,14 @@ void LLLiveLSLEditor::callbackLSLCompileSucceeded(const LLUUID& task_id,
     mScriptEd->mErrorList->addCommentText(LLTrans::getString("CompileSuccessful"));
     mScriptEd->mErrorList->addCommentText(LLTrans::getString("SaveComplete"));
 
+    if (isOpenInExternalEditor())
+    {
+        LLSD success_msg;
+        success_msg.append(LLTrans::getString("CompileSuccessful"));
+        success_msg.append(LLTrans::getString("SaveComplete"));
+        logErrorsToFile(success_msg);
+    }
+
     mScriptEd->mCompiling = false;
 
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
@@ -2358,6 +2448,12 @@ void LLLiveLSLEditor::callbackLSLCompileFailed(const LLSD& compile_errors)
         row["columns"][0]["font"] = "OCRA";
         mScriptEd->mErrorList->addElement(row);
     }
+    
+    if (isOpenInExternalEditor())
+    {
+        logErrorsToFile(compile_errors);
+    }
+
     mScriptEd->selectFirstError();
     mIsSaving = FALSE;
     mScriptEd->mCompiling = false;
