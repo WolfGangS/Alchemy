@@ -36,6 +36,7 @@
 #include <map>
 #include <list>
 #include <deque>
+#include <regex>
 #include "llpointer.h"
 
 class LLStyle;
@@ -87,8 +88,18 @@ public:
         mToken( token ),
         mColor( color ),
         mToolTip( tool_tip ),
-        mDelimiter( delimiter )     // right delimiter
+        mDelimiter( delimiter ),     // right delimiter
+        mCompiledRegex( nullptr )
     {
+    }
+
+    ~LLKeywordToken()
+    {
+        if (mCompiledRegex)
+        {
+            delete mCompiledRegex;
+            mCompiledRegex = nullptr;
+        }
     }
 
     S32                 getLengthHead() const   { return mToken.size(); }
@@ -100,6 +111,8 @@ public:
     ETokenType          getType()  const        { return mType; }
     const LLWString&    getToolTip() const      { return mToolTip; }
     const LLWString&    getDelimiter() const    { return mDelimiter; }
+    std::regex*         getCompiledRegex() const { return mCompiledRegex; }
+    void                setCompiledRegex(std::regex* regex) { mCompiledRegex = regex; }
 
 #ifdef _DEBUG
     void        dump();
@@ -111,6 +124,7 @@ private:
     LLColor4    mColor;
     LLWString   mToolTip;
     LLWString   mDelimiter;
+    std::regex* mCompiledRegex;
 };
 
 class LLKeywords
