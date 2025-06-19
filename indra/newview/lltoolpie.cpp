@@ -1689,6 +1689,33 @@ static void handle_click_action_play()
     }
 }
 
+bool LLToolPie::shouldAllowFirstMediaInteraction(const LLPickInfo& pick)
+{
+    if(!pick.getObject())
+    {
+        return false;
+    }
+
+    static LLCachedControl<S32> FirstClickPref(gSavedSettings, "MediaFirstClickInteract", 1);
+
+    // HUD attachments only
+    if(FirstClickPref >= 1 && pick.getObject()->isHUDAttachment())
+    {
+        return true;
+    }
+    // Only own objects
+    if(FirstClickPref >= 2 && pick.getObject()->permYouOwner())
+    {
+        return true;
+    }
+    // Any object
+    if(FirstClickPref >= 99)
+    {
+        return true;
+    }
+    return false;
+}
+
 bool LLToolPie::handleMediaClick(const LLPickInfo& pick)
 {
     //FIXME: how do we handle object in different parcel than us?
@@ -1723,6 +1750,15 @@ bool LLToolPie::handleMediaClick(const LLPickInfo& pick)
         {
             // It's okay to give this a null impl
             LLViewerMediaFocus::getInstance()->setFocusFace(pick.getObject(), pick.mObjectFace, media_impl, pick.mNormal);
+            if (shouldAllowFirstMediaInteraction(pick) && mep->getFirstClickInteract())
+            {
+                if (media_impl.notNull())
+                {
+                    media_impl->mouseDown(pick.mUVCoords, gKeyboard->currentMask(true));
+                    mMediaMouseCaptureID = mep->getMediaID();
+                    setMouseCapture(true);
+                }
+            }
         }
         else
         {
@@ -1835,7 +1871,7 @@ bool LLToolPie::handleMediaHover(const LLPickInfo& pick)
             }
 
             // If this is the focused media face, send mouse move events.
-            if (LLViewerMediaFocus::getInstance()->isFocusedOnFace(objectp, pick.mObjectFace))
+            if (LLViewerMediaFocus::getInstance()->isFocusedOnFace(objectp, pick.mObjectFace) || (shouldAllowFirstMediaInteraction(pick) && mep->getFirstClickInteract()))
             {
                 media_impl->mouseMove(pick.mUVCoords, gKeyboard->currentMask(TRUE));
                 gViewerWindow->setCursor(media_impl->getLastSetCursor());
