@@ -439,6 +439,49 @@
         name="autoplay_ask"
         value="2"/>
   </combo_box>
+  <combo_box
+    control_name="MediaFirstClickInteract"
+    enabled_control="AudioStreamingMedia"
+    follows="left|top"
+    layout="topleft"
+    height="23"
+    left_delta="140"
+    width="130"
+    name="media_first_interact_combo"
+    tool_tip="This setting controls which media (once loaded) does not require a first click to focus before interaction can begin. This allows clicks to be passed directly to media bypassing the focus click requirement. Each option also inherits the previous ones.">
+    <item
+    label="Disabled"
+    name="media_first_click_none"
+    value="0"/>
+    <item
+        label="Worn HUDs only"
+        name="media_first_click_hud"
+        value="1"/>
+    <item
+        label="Owned objects"
+        name="media_first_click_own"
+        value="3"/>
+    <item
+        label="Friends' objects"
+        name="media_first_click_friend"
+        value="7"/>
+    <item
+        label="Group objects"
+        name="media_first_click_group"
+        value="15"/>
+    <item
+        label="Landowner objects"
+        name="media_first_click_land"
+        value="31"/>
+    <item
+        label="Anyone's objects"
+        name="media_first_interact_any"
+        value="1073741823"/>
+    <item
+      label="All MOAP"
+      name="media_first_click_all"
+      value="2147483647"/>
+  </combo_box>
   <text
    type="string"
    length="1"
