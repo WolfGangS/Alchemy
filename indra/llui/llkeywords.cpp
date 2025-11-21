@@ -36,6 +36,8 @@
 #include "llstl.h"
 #include "llsdutil.h"
 
+extern LLControlGroup gSavedSettings;
+
 inline bool LLKeywordToken::isHead(const llwchar* s) const
 {
     size_t bytes = mToken.size() * sizeof(llwchar);
@@ -644,6 +646,17 @@ void LLKeywords::findSegments(std::vector<LLTextSegmentPtr>* seg_list, const LLW
         while( *cur && iswspace(*cur) && (*cur != '\n')  )
         {
             cur++;
+        }
+
+        // Check if syntax highlighting is disabled
+        static LLCachedControl<bool> sDisableSyntaxHighlighting(gSavedSettings, "ScriptEditorDisableSyntaxHighlight", false);
+        if (sDisableSyntaxHighlighting)
+        {
+            if (*cur && *cur != '\n')
+            {
+                cur++;
+            }
+            continue; // skip processing any further syntax highlighting
         }
 
         while( *cur && *cur != '\n' )

@@ -61,7 +61,7 @@ macro (use_prebuilt_binary _binary)
 
     if(NOT ${_binary}_installed EQUAL 0)
         message(FATAL_ERROR
-                "Failed to download or unpack prebuilt '${_binary}'."
+                "Failed to download or unpack prebuilt '${_binary}'. ${CMAKE_SOURCE_DIR}"
                 " Process returned ${${_binary}_installed}.")
     endif (NOT ${_binary}_installed EQUAL 0)
 endmacro (use_prebuilt_binary _binary)

@@ -41,15 +41,15 @@ public:
         Params();
     };
 
-    virtual ~LLScriptEditor();
+    ~LLScriptEditor() override {};
 
     // LLView override
-    virtual void    draw() override;
+    void    draw() override;
     BOOL    postBuild() override;
 
     void    initKeywords(bool luau_language = false);
     void    loadKeywords();
-    /* virtual */ void  clearSegments();
+    void    clearSegments();
     LLKeywords::keyword_iterator_t keywordsBegin();
     LLKeywords::keyword_iterator_t keywordsEnd();
     LLKeywords& getKeywords();
@@ -66,8 +66,8 @@ public:
 
 private:
     void    drawLineNumbers();
-    /* virtual */ void  updateSegments() override;
-    /* virtual */ void  drawSelectionBackground() override;
+    void  updateSegments() override;
+    void  drawSelectionBackground() override;
     void    loadKeywords(const std::string& filename_keywords,
                          const std::string& filename_colors);
 

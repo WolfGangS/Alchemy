@@ -48,6 +48,7 @@
 #include "llfloaterimcontainer.h"
 #include "llrootview.h"
 #include "lllayoutstack.h"
+#include "llscripteditorws.h"
 
 // [RLVa:KB] - Checked: RLVa-2.0.0
 #include "rlvactions.h"
@@ -710,6 +711,16 @@ void LLFloaterIMNearbyChatHandler::processChat(const LLChat& chat_msg,
         if(gSavedSettings.getBOOL("ShowScriptErrors") == FALSE)
             return;
 
+
+        if (gSavedSettings.getBOOL("ExternalWebsocketSyncEnable") && gSavedSettings.getBOOL("ExternalWebsocketForwardDebug"))
+        {
+            LLScriptEditorWSServer::ptr_t server = LLScriptEditorWSServer::getServer();
+            if (server)
+            {
+                server->forwardChatToIDE(chat_msg);
+            }
+        }
+
         // don't process debug messages from not owned objects, see EXT-7762
         if (gAgentID != chat_msg.mOwnerID)
         {
@@ -728,6 +739,16 @@ void LLFloaterIMNearbyChatHandler::processChat(const LLChat& chat_msg,
                                                 txt_color,
                                                 chat_msg.mFromID);
             return;
+        }
+    }
+    else if ((chat_msg.mChatType == CHAT_TYPE_OWNER) &&
+        gSavedSettings.getBOOL("ExternalWebsocketSyncEnable") &&
+        gSavedSettings.getBOOL("ExternalWebsocketForwardDebug"))
+    {
+        LLScriptEditorWSServer::ptr_t server = LLScriptEditorWSServer::getServer();
+        if (server)
+        {
+            server->forwardChatToIDE(chat_msg);
         }
     }
 

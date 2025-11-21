@@ -94,6 +94,8 @@
 #include "lltoggleablemenu.h"
 #include "llmenubutton.h"
 #include "llinventoryfunctions.h"
+#include "llwebsocketmgr.h"
+#include "llscripteditorws.h"
 #include <regex>
 #include "llviewernetwork.h"
 // [RLVa:KB] - Checked: 2011-05-22 (RLVa-1.3.1a)
@@ -1305,11 +1307,11 @@ void LLScriptEdCore::openInExternalEditor()
         // Script contents clobbered when Edit button
         // clicked with preprocessor active. Fix from NaCl (code moved
         // from above).
-        if (mContainer->mLiveFile)
-        {
-            // If already open in an external editor, just return
-            return;
-        }
+        // if (mContainer->mLiveFile)
+        // {
+        //     // If already open in an external editor, just return
+        //     return;
+        // }
 
         // Generate a suitable filename
         std::string script_name = mScriptName;
@@ -1331,9 +1333,19 @@ void LLScriptEdCore::openInExternalEditor()
             writeToFile(filename, mLSLPreprocEnabled);
         }
 
+        if (mContainer->mLiveFile && mContainer->mLiveFile->filename() != filename)
+        { // The name may have changed if we changed the type of scipt being edited.
+            delete mContainer->mLiveFile;
+            mContainer->mLiveFile = NULL;
+        }
+
         // Start watching file changes.
-        mContainer->mLiveFile = new LLLiveLSLFile(filename, boost::bind(&LLScriptEdContainer::onExternalChange, mContainer, _1));
-        mContainer->mLiveFile->addToEventTimer();
+        if (!mContainer->mLiveFile)
+        {
+            mContainer->mLiveFile = new LLLiveLSLFile(filename, boost::bind(&LLScriptEdContainer::onExternalChange, mContainer, _1));
+            mContainer->mLiveFile->addToEventTimer();
+        }
+        mContainer->startWebsocketServer();
 
         status = ed.run(filename);
         if (status != LLExternalEditor::EC_SUCCESS)
@@ -1764,6 +1776,11 @@ LLScriptEdContainer::~LLScriptEdContainer()
 
     delete mLiveLogFile;
     mLiveLogFile = nullptr;
+
+    if (!mWebSocketServer.expired())
+    {
+        unsubscribeScript();
+    }
 }
 
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
@@ -1778,17 +1795,9 @@ void LLScriptEdContainer::onBackupTimer()
 }
 // [/SL:KB]
 
-std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name)
+std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name) const
 {
-    // Take script inventory item id (within the object inventory)
-    // to consideration so that it's possible to edit multiple scripts
-    // in the same object inventory simultaneously (STORM-781).
-    std::string script_id = mObjectUUID.asString() + "_" + mItemUUID.asString();
-
-    // Use MD5 sum to make the file name shorter and not exceed maximum path length.
-    char script_id_hash_str[33];               /* Flawfinder: ignore */
-    LLMD5 script_id_hash((const U8 *)script_id.c_str());
-    script_id_hash.hex_digest(script_id_hash_str);
+    std::string script_id_hash_str(getUniqueHash());
 
     static LLCachedControl<std::string> lauFileEnding(gSavedSettings, "ExternalEditorLuaFileEnding", ".lua");
 
@@ -1802,6 +1811,21 @@ std::string LLScriptEdContainer::getTmpFileName(const std::string& script_name)
     {
         return std::string(LLFile::tmpdir()) + "sl_script_" + script_name + "_" + script_id_hash_str + file_ending;
     }
+}
+
+std::string LLScriptEdContainer::getUniqueHash() const
+{
+    // Take script inventory item id (within the object inventory)
+    // to consideration so that it's possible to edit multiple scripts
+    // in the same object inventory simultaneously (STORM-781).
+    std::string script_id = mObjectUUID.asString() + "_" + mItemUUID.asString();
+
+    // Use MD5 sum to make the file name shorter and not exceed maximum path length.
+    char  script_id_hash_str[33]; /* Flawfinder: ignore */
+    LLMD5 script_id_hash((const U8*)script_id.c_str());
+    script_id_hash.hex_digest(script_id_hash_str);
+
+    return std::string(script_id_hash_str);
 }
 
 std::string LLScriptEdContainer::getErrorLogFileName(const std::string& script_path)
@@ -1890,6 +1914,64 @@ BOOL LLScriptEdContainer::handleKeyHere(KEY key, MASK mask)
     }
     return TRUE;
 }
+
+void LLScriptEdContainer::startWebsocketServer()
+{
+    if (gSavedSettings.getBOOL("ExternalWebsocketSyncEnable"))
+    {
+        // Attempt to find an existing server
+        LLWebsocketMgr&               wsmgr  = LLWebsocketMgr::instance();
+        LLScriptEditorWSServer::ptr_t server =
+            std::static_pointer_cast<LLScriptEditorWSServer>(
+                wsmgr.findServerByName(LLScriptEditorWSServer::DEFAULT_SERVER_NAME));
+
+        if (!server)
+        {   // We couldn't find one, so create it
+            U16 server_port = static_cast<U16>(gSavedSettings.getS32("ExternalWebsocketSyncPort"));
+            bool server_localhost = gSavedSettings.getBOOL("ExternalWebsocketSyncLocal");
+            server = std::make_shared<LLScriptEditorWSServer>(LLScriptEditorWSServer::DEFAULT_SERVER_NAME, server_port, server_localhost);
+            wsmgr.addServer(server);
+        }
+
+        bool is_running = server->isRunning();
+        if (!is_running)
+        {   // Server isn't running, so start it
+            is_running = wsmgr.startServer(LLScriptEditorWSServer::DEFAULT_SERVER_NAME);
+        }
+
+        if (!is_running && !server->isRunning())
+        {   // Failed to start the server
+            LL_WARNS() << "Failed to start script editor websocket server" << LL_ENDL;
+            return;
+        }
+
+        std::string script_id_hash_str(getUniqueHash());
+        server->subscribeScriptEditor(mObjectUUID, mItemUUID, mScriptEd->mScriptName, getHandle(), script_id_hash_str);
+        mWebSocketServer = server;
+    }
+}
+
+void LLScriptEdContainer::unsubscribeScript()
+{
+    auto server = mWebSocketServer.lock();
+    if (server)
+    {
+        std::string script_id_hash_str(getUniqueHash());
+        server->sendUnsubscribeScriptEditor(script_id_hash_str);
+        server->unsubscribeEditor(script_id_hash_str);
+    }
+}
+
+void LLScriptEdContainer::sendCompileResults(LLSD& params)
+{
+    auto server = mWebSocketServer.lock();
+    if (server)
+    {
+        std::string script_id_hash_str(getUniqueHash());
+        server->sendCompileResults(script_id_hash_str, params);
+    }
+}
+
     /// ---------------------------------------------------------------------------
 /// LLPreviewLSL
 /// ---------------------------------------------------------------------------
@@ -2151,6 +2233,7 @@ void LLPreviewLSL::finishedLSLUpload(LLUUID itemId, LLSD response)
         {
             preview->callbackLSLCompileFailed(response["errors"]);
         }
+        preview->sendCompileResults(response);
     }
 }
 
@@ -2174,6 +2257,12 @@ bool LLPreviewLSL::failedLSLUpload(LLUUID itemId, LLUUID taskId, LLSD response, 
         LLSD errors;
         errors.append(LLTrans::getString("UploadFailed") + reason);
         preview->callbackLSLCompileFailed(errors);
+
+        LLSD message;
+        message["compiled"] = false;
+        message["errors"]   = errors;
+        preview->sendCompileResults(message);
+
         return true;
     }
 
@@ -2797,6 +2886,8 @@ void LLLiveLSLEditor::finishLSLUpload(LLUUID itemId, LLUUID taskId, LLUUID newAs
         {
             preview->callbackLSLCompileFailed(response["errors"]);
         }
+        response["is_running"] = isRunning;
+        preview->sendCompileResults(response);
     }
 
 }

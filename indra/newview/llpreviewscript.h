@@ -54,6 +54,7 @@ class LLScriptEdContainer;
 class LLFloaterGotoLine;
 class LLFloaterExperienceProfile;
 class LLScriptMovedObserver;
+class LLScriptEditorWSServer;
 class FSLSLPreprocessor;
 class FSLSLPreProcViewer;
 
@@ -63,12 +64,12 @@ public:
     typedef boost::function<bool(const std::string& filename)> change_callback_t;
 
     LLLiveLSLFile(std::string file_path, change_callback_t change_cb);
-    ~LLLiveLSLFile();
+    ~LLLiveLSLFile() override;
 
     void ignoreNextUpdate() { mIgnoreNextUpdate = true; }
 
 protected:
-    /*virtual*/ bool loadFile();
+    /*virtual*/ bool loadFile() override;
 
     change_callback_t   mOnChangeCallback;
     bool                mIgnoreNextUpdate;
@@ -103,16 +104,19 @@ protected:
         bool live,
         S32 bottom_pad = 0);    // pad below bottom row of buttons
 public:
-    ~LLScriptEdCore();
+    ~LLScriptEdCore() override;
 
     void            initializeKeywords();
     void            initMenu();
     void            processKeywords();
     void            processKeywords(bool luau_language);
+    LLScriptEditor* getEditor() const { return mEditor; }
+    LLKeywords&     getKeywords() const { return mEditor->getKeywords(); }
+    bool            isLuauLanguage() const { return mEditor->getIsLuauLanguage(); }
     void            processLoaded();
 
-    virtual void    draw();
-    /*virtual*/ BOOL    postBuild();
+    virtual void    draw() override;
+    /*virtual*/ BOOL    postBuild() override;
     BOOL            canClose();
     void            setEnableEditing(bool enable);
     bool            canLoadOrSaveToFile( void* userdata );
@@ -149,7 +153,7 @@ public:
     static bool     enableSaveToFileMenu(void* userdata);
     static bool     enableLoadFromFileMenu(void* userdata);
 
-    virtual bool    hasAccelerators() const { return true; }
+    bool            hasAccelerators() const override { return true; }
     LLUUID          getAssociatedExperience()const;
     void            setAssociatedExperience( const LLUUID& experience_id );
 
@@ -163,7 +167,7 @@ public:
     //bool isFontSizeChecked(const LLSD &userdata);
     //void onChangeFontSize(const LLSD &size_name);
 
-    virtual BOOL handleKeyHere(KEY key, MASK mask);
+    virtual BOOL handleKeyHere(KEY key, MASK mask) override;
     void selectAll() { mEditor->selectAll(); }
 
     void            enableSave(bool b) { mEnableSave = b; }
@@ -242,12 +246,19 @@ class LLScriptEdContainer : public LLPreview
 
 public:
     LLScriptEdContainer(const LLSD& key);
-    virtual ~LLScriptEdContainer();
+    virtual ~LLScriptEdContainer() override;
 
-    BOOL handleKeyHere(KEY key, MASK mask);
+    BOOL handleKeyHere(KEY key, MASK mask) override;
+
+    void startWebsocketServer();
+    void unsubscribeScript();
+    void sendCompileResults(LLSD&);
+
+    LLScriptEdCore* getScriptEdCore() const { return mScriptEd; }
 
 protected:
-    std::string     getTmpFileName(const std::string& script_name);
+    std::string     getTmpFileName(const std::string& script_name) const;
+    std::string     getUniqueHash() const;
     std::string getErrorLogFileName(const std::string& script_path);
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
     /*virtual*/ void onBackupTimer();
@@ -261,6 +272,8 @@ protected:
     LLScriptEdCore*     mScriptEd;
     LLLiveLSLFile*      mLiveFile = nullptr;
     LLLiveLSLFile*      mLiveLogFile = nullptr;
+
+    std::weak_ptr<LLScriptEditorWSServer> mWebSocketServer;
 };
 
 // Used to view and edit an LSL script from your inventory.
@@ -268,7 +281,7 @@ class LLPreviewLSL final : public LLScriptEdContainer
 {
 public:
     LLPreviewLSL(const LLSD& key );
-    ~LLPreviewLSL();
+    ~LLPreviewLSL() override;
 
     LLUUID getScriptID() { return mItemUUID; }
 
@@ -277,19 +290,19 @@ public:
     virtual void callbackLSLCompileSucceeded();
     virtual void callbackLSLCompileFailed(const LLSD& compile_errors);
 
-    /*virtual*/ BOOL postBuild();
+    BOOL postBuild() override;
 
 // [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-2.3)
     LLScriptEditor* getEditor() { return (mScriptEd) ? mScriptEd->mEditor : NULL; }
 // [/SL:KB]
 
 protected:
-    virtual void draw();
-    virtual BOOL canClose();
+    void draw() override;
+    BOOL canClose() override;
     void closeIfNeeded();
 
-    virtual void loadAsset();
-    /*virtual*/ void saveIfNeeded(bool sync = true);
+    void loadAsset() override;
+    void saveIfNeeded(bool sync = true) override;
     void onCompileTargetChanged();
 
 //  static void onSearchReplace(void* userdata);
@@ -330,7 +343,7 @@ public:
                                             bool is_script_running);
     virtual void callbackLSLCompileFailed(const LLSD& compile_errors);
 
-    /*virtual*/ BOOL postBuild();
+    BOOL postBuild() override;
 
     void setIsNew() { mIsNew = TRUE; }
 
@@ -355,13 +368,13 @@ public:
 // [/SL:KB]
 
 private:
-    virtual BOOL canClose();
+    BOOL canClose() override;
     void closeIfNeeded();
-    virtual void draw();
+    void draw() override;
 
-    virtual void loadAsset();
+    void loadAsset() override;
     void loadAsset(BOOL is_new);
-    /*virtual*/ void saveIfNeeded(bool sync = true);
+    void saveIfNeeded(bool sync = true) override;
 
 
 //  static void onSearchReplace(void* userdata);

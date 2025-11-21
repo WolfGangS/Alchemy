@@ -55,11 +55,11 @@ LLScriptEditor::LLScriptEditor(const Params& p)
     }
 }
 
-LLScriptEditor::~LLScriptEditor()
-{
-    mFontNameConnection.disconnect();
-    mFontSizeConnection.disconnect();
-}
+// LLScriptEditor::~LLScriptEditor()
+// {
+//     mFontNameConnection.disconnect();
+//     mFontSizeConnection.disconnect();
+// }
 
 BOOL LLScriptEditor::postBuild()
 {
