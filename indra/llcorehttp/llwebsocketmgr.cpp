@@ -208,15 +208,29 @@ struct Server_impl
     void init()
     {
         mServer.init_asio();
-        if (mLocalOnly)
-        {
-            std::stringstream port_str;
-            port_str << mPort;
-            mServer.listen("127.0.0.1", port_str.str());
+        try {
+            if (mLocalOnly)
+            {
+                std::stringstream port_str;
+                port_str << mPort;
+                mServer.listen("127.0.0.1", port_str.str());
+            }
+            else
+            {
+                mServer.listen(mPort);
+            }
         }
-        else
+        catch (const websocketpp::exception& e)
         {
-            mServer.listen(mPort);
+            LL_WARNS("WebSocket") << "WebSocket server exception: " << e.what() << LL_ENDL;
+        }
+        catch (const std::exception& e)
+        {
+            LL_WARNS("WebSocket") << "WebSocket server std::exception: " << e.what() << LL_ENDL;
+        }
+        catch (...)
+        {
+            LL_WARNS("WebSocket") << "WebSocket server unknown exception" << LL_ENDL;
         }
     }
 
