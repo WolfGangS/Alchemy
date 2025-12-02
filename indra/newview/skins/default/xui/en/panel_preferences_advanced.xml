@@ -280,7 +280,7 @@
     label="Script Development"
     name="scripting_development"
     height="20"
-    left="30"
+    left="10"
     top_pad="10"
     width="200">
     <button.commit_callback
