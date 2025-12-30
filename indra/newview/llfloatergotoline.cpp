@@ -109,9 +109,10 @@ void LLFloaterGotoLine::handleBtnGoto()
         {
                 if (mEditorCore && mEditorCore->mCurrentEditor)
                 {
+            S32 offset = mEditorCore->mEditor->getIsLuauLanguage() ? -1 : 0;
             mEditorCore->mCurrentEditor->deselect();
 // [SL:KB] - Patch: UI-ScriptGoToLine | Checked: 2013-12-31 (Catznip-3.6)
-            mEditorCore->mCurrentEditor->scrollTo(row, column);
+            mEditorCore->mCurrentEditor->scrollTo(row + offset, column);
 // [/SL:KB]
 //          mEditorCore->mCurrentEditor->setCursor(row, column);
             mEditorCore->mCurrentEditor->setFocus(TRUE);
@@ -147,6 +148,7 @@ void LLFloaterGotoLine::onGotoBoxCommit()
         {
                 if (mEditorCore && mEditorCore->mCurrentEditor)
                 {
+            row -= mEditorCore->mEditor->getIsLuauLanguage() ? 1 : 0;
 // [SL:KB] - Patch: UI-ScriptGoToLine | Checked: 2013-12-31 (Catznip-3.6)
             mEditorCore->mCurrentEditor->scrollTo(row, column);
 // [/SL:KB]

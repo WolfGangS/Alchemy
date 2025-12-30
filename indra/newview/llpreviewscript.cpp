@@ -889,6 +889,7 @@ void LLScriptEdCore::draw()
         mEditor->getCurrentLineAndColumn( &line, &column, FALSE );  // don't include wordwrap
         LLStringUtil::format_map_t args;
         std::string cursor_pos;
+        line += mEditor->getIsLuauLanguage() ? 1 : 0;
         args["[LINE]"] = llformat ("%d", line);
         args["[COLUMN]"] = llformat ("%d", column);
         cursor_pos = LLTrans::getString("CursorPos", args);
@@ -2537,7 +2538,7 @@ void LLLiveLSLEditor::callbackLSLCompileFailed(const LLSD& compile_errors)
         row["columns"][0]["font"] = "OCRA";
         mScriptEd->mErrorList->addElement(row);
     }
-    
+
     if (isOpenInExternalEditor())
     {
         logErrorsToFile(compile_errors);
@@ -3022,7 +3023,7 @@ void LLLiveLSLEditor::processScriptRunningReply(LLMessageSystem* msg, void**)
         instance->mHaveRunningInfo = TRUE;
         BOOL running;
         msg->getBOOLFast(_PREHASH_Script, _PREHASH_Running, running);
-        
+
         instance->mRunningCheckbox->set(running);
 
         BOOL mono = false, luau = false, luau_language = false;
