@@ -3345,7 +3345,7 @@ BOOL LLModelPreview::render()
 
     LLViewerCamera::getInstance()->setAspect(aspect);
 
-    LLViewerCamera::getInstance()->setView(LLViewerCamera::getInstance()->getDefaultFOV() / mCameraZoom);
+    LLViewerCamera::getInstance()->setViewNoBroadcast(LLViewerCamera::getInstance()->getDefaultFOV() / mCameraZoom);
 
     LLVector3 offset = mCameraOffset;
     LLVector3 target_pos = mPreviewTarget + offset;
