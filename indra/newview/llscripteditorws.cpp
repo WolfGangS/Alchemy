@@ -341,8 +341,9 @@ LLSD LLScriptEditorWSServer::handleSyntaxRequest(const LLSD& params) const
     response["id"] = mLastSyntaxId;
     if (category == "defs.lua")
     {
-        response["defs"] = LLSyntaxLua::instance().getKeywordsXML();
-        response["types"] = LLSyntaxLua::instance().getTypesXML();
+        // response["defs"] = LLSyntaxLua::instance().getKeywordsXML();
+        // response["types"] = LLSyntaxLua::instance().getTypesXML();
+        response["defs"] = LLSyntaxLua::instance().getTypesXML();
         response["success"] = response["types"].isDefined();
     }
     else if (category == "defs.lsl")
