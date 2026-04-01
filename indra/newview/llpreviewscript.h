@@ -54,6 +54,7 @@ class LLScriptEdContainer;
 class LLFloaterGotoLine;
 class LLFloaterExperienceProfile;
 class LLScriptMovedObserver;
+class LLScriptEditorWSServer;
 class FSLSLPreprocessor;
 class FSLSLPreProcViewer;
 
@@ -63,12 +64,12 @@ public:
     typedef boost::function<bool(const std::string& filename)> change_callback_t;
 
     LLLiveLSLFile(std::string file_path, change_callback_t change_cb);
-    ~LLLiveLSLFile();
+    ~LLLiveLSLFile() override;
 
     void ignoreNextUpdate() { mIgnoreNextUpdate = true; }
 
 protected:
-    /*virtual*/ bool loadFile();
+    /*virtual*/ bool loadFile() override;
 
     change_callback_t   mOnChangeCallback;
     bool                mIgnoreNextUpdate;
@@ -86,6 +87,9 @@ class LLScriptEdCore final : public LLPanel
     // NaCl - LSL Preprocessor
     friend class FSLSLPreprocessor;
     // NaCl End
+public:
+    typedef boost::function<void(void*)> script_ed_callback_t;
+    typedef boost::function<void(void*, BOOL, bool)> save_callback_t;
 
 protected:
     // Supposed to be invoked only by the container.
@@ -93,22 +97,26 @@ protected:
         LLScriptEdContainer* container,
         const std::string& sample,
         const LLHandle<LLFloater>& floater_handle,
-        void (*load_callback)(void* userdata),
-        void (*save_callback)(void* userdata, BOOL close_after_save, bool sync),
+        script_ed_callback_t load_callback,
+        save_callback_t save_callback,
 //      void (*search_replace_callback)(void* userdata),
         void* userdata,
         bool live,
         S32 bottom_pad = 0);    // pad below bottom row of buttons
 public:
-    ~LLScriptEdCore();
+    ~LLScriptEdCore() override;
 
     void            initializeKeywords();
     void            initMenu();
     void            processKeywords();
+    void            processKeywords(bool luau_language);
+    LLScriptEditor* getEditor() const { return mEditor; }
+    LLKeywords&     getKeywords() const { return mEditor->getKeywords(); }
+    bool            isLuauLanguage() const { return mEditor->getIsLuauLanguage(); }
     void            processLoaded();
 
-    virtual void    draw();
-    /*virtual*/ BOOL    postBuild();
+    virtual void    draw() override;
+    /*virtual*/ BOOL    postBuild() override;
     BOOL            canClose();
     void            setEnableEditing(bool enable);
     bool            canLoadOrSaveToFile( void* userdata );
@@ -145,7 +153,7 @@ public:
     static bool     enableSaveToFileMenu(void* userdata);
     static bool     enableLoadFromFileMenu(void* userdata);
 
-    virtual bool    hasAccelerators() const { return true; }
+    bool            hasAccelerators() const override { return true; }
     LLUUID          getAssociatedExperience()const;
     void            setAssociatedExperience( const LLUUID& experience_id );
 
@@ -159,8 +167,11 @@ public:
     //bool isFontSizeChecked(const LLSD &userdata);
     //void onChangeFontSize(const LLSD &size_name);
 
-    virtual BOOL handleKeyHere(KEY key, MASK mask);
+    virtual BOOL handleKeyHere(KEY key, MASK mask) override;
     void selectAll() { mEditor->selectAll(); }
+
+    void            enableSave(bool b) { mEnableSave = b; }
+    bool            hasChanged();
 
   private:
     // NaCl - LSL Preprocessor
@@ -171,11 +182,7 @@ public:
     void        onBtnDynamicHelp();
     void        onBtnUndoChanges();
 
-    bool        hasChanged();
-
     void selectFirstError();
-
-    void enableSave(BOOL b) {mEnableSave = b;}
 
 protected:
     void deleteBridges();
@@ -194,8 +201,8 @@ private:
     LLMenuBarGL*    mMenuBar;
 // [/SL:KB]
     LLScriptEditor* mEditor;
-    void            (*mLoadCallback)(void* userdata);
-    void            (*mSaveCallback)(void* userdata, BOOL close_after_save, bool sync);
+    script_ed_callback_t mLoadCallback;
+    save_callback_t mSaveCallback;
 //  void            (*mSearchReplaceCallback) (void* userdata);
     void*           mUserdata;
     LLComboBox      *mFunctions;
@@ -209,7 +216,6 @@ private:
     S32             mLiveHelpHistorySize;
     BOOL            mEnableSave;
     BOOL            mHasScriptData;
-    LLLiveLSLFile*  mLiveFile;
     LLUUID          mAssociatedExperience;
     BOOL            mScriptRemoved;
     BOOL            mSaveDialogShown;
@@ -218,6 +224,7 @@ private:
 
     LLTextBox*      mLineCol;
     LLButton*       mSaveBtn;
+    LLComboBox*     mCompileTarget = nullptr;
     // NaCl - LSL Preprocessor
     std::unique_ptr<FSLSLPreprocessor>  mLSLProc;
     FSLSLPreProcViewer* mPostEditor;
@@ -239,20 +246,34 @@ class LLScriptEdContainer : public LLPreview
 
 public:
     LLScriptEdContainer(const LLSD& key);
-    LLScriptEdContainer(const LLSD& key, const bool live);
+    virtual ~LLScriptEdContainer() override;
 
-    BOOL handleKeyHere(KEY key, MASK mask);
+    BOOL handleKeyHere(KEY key, MASK mask) override;
+
+    void startWebsocketServer();
+    void unsubscribeScript();
+    void sendCompileResults(LLSD&);
+
+    LLScriptEdCore* getScriptEdCore() const { return mScriptEd; }
 
 protected:
-    std::string     getTmpFileName(const std::string& script_name);
+    std::string     getTmpFileName(const std::string& script_name) const;
+    std::string     getUniqueHash() const;
+    std::string getErrorLogFileName(const std::string& script_path);
 // [SL:KB] - Patch: Build-ScriptRecover | Checked: 2011-11-23 (Catznip-3.2)
     /*virtual*/ void onBackupTimer();
 // [/SL:KB]
 
     bool            onExternalChange(const std::string& filename);
     virtual void    saveIfNeeded(bool sync = true) = 0;
+    bool            logErrorsToFile(const LLSD& compile_errors);
+    bool            isOpenInExternalEditor() const { return mLiveFile != nullptr; }
 
     LLScriptEdCore*     mScriptEd;
+    LLLiveLSLFile*      mLiveFile = nullptr;
+    LLLiveLSLFile*      mLiveLogFile = nullptr;
+
+    std::weak_ptr<LLScriptEditorWSServer> mWebSocketServer;
 };
 
 // Used to view and edit an LSL script from your inventory.
@@ -260,7 +281,7 @@ class LLPreviewLSL final : public LLScriptEdContainer
 {
 public:
     LLPreviewLSL(const LLSD& key );
-    ~LLPreviewLSL();
+    ~LLPreviewLSL() override;
 
     LLUUID getScriptID() { return mItemUUID; }
 
@@ -269,19 +290,20 @@ public:
     virtual void callbackLSLCompileSucceeded();
     virtual void callbackLSLCompileFailed(const LLSD& compile_errors);
 
-    /*virtual*/ BOOL postBuild();
+    BOOL postBuild() override;
 
 // [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-2.3)
     LLScriptEditor* getEditor() { return (mScriptEd) ? mScriptEd->mEditor : NULL; }
 // [/SL:KB]
 
 protected:
-    virtual void draw();
-    virtual BOOL canClose();
+    void draw() override;
+    BOOL canClose() override;
     void closeIfNeeded();
 
-    virtual void loadAsset();
-    /*virtual*/ void saveIfNeeded(bool sync = true);
+    void loadAsset() override;
+    void saveIfNeeded(bool sync = true) override;
+    void onCompileTargetChanged();
 
 //  static void onSearchReplace(void* userdata);
     static void onLoad(void* userdata);
@@ -321,12 +343,13 @@ public:
                                             bool is_script_running);
     virtual void callbackLSLCompileFailed(const LLSD& compile_errors);
 
-    /*virtual*/ BOOL postBuild();
+    BOOL postBuild() override;
 
     void setIsNew() { mIsNew = TRUE; }
 
     static void setAssociatedExperience( LLHandle<LLLiveLSLEditor> editor, const LLSD& experience );
-    static void onToggleExperience(LLUICtrl *ui, void* userdata);
+    void onToggleExperience();
+    void onViewProfile();
     static void onViewProfile(LLUICtrl *ui, void* userdata);
 
     void setExperienceIds(const LLSD& experience_ids);
@@ -338,19 +361,20 @@ public:
 
     void setObjectName(std::string name) { mObjectName = name; }
 
+    bool getIsModifiable() const { return mIsModifiable; } // Evaluated on load assert
+
 // [SL:KB] - Patch: UI-FloaterSearchReplace | Checked: 2010-11-05 (Catznip-2.3)
     LLScriptEditor* getEditor() { return (mScriptEd) ? mScriptEd->mEditor : NULL; }
 // [/SL:KB]
 
 private:
-    virtual BOOL canClose();
+    BOOL canClose() override;
     void closeIfNeeded();
-    virtual void draw();
+    void draw() override;
 
-    virtual void loadAsset();
+    void loadAsset() override;
     void loadAsset(BOOL is_new);
-    /*virtual*/ void saveIfNeeded(bool sync = true);
-    BOOL monoChecked() const;
+    void saveIfNeeded(bool sync = true) override;
 
 
 //  static void onSearchReplace(void* userdata);
@@ -360,8 +384,8 @@ private:
     static void onLoadComplete(const LLUUID& asset_uuid,
                                LLAssetType::EType type,
                                void* user_data, S32 status, LLExtStat ext_status);
-    static void onRunningCheckboxClicked(LLUICtrl*, void* userdata);
-    static void onReset(void* userdata);
+    void onRunningCheckboxClicked();
+    void onReset();
 
     void loadScriptText(const LLUUID &uuid, LLAssetType::EType type);
 
@@ -369,7 +393,7 @@ private:
 
     static void* createScriptEdPanel(void* userdata);
 
-    static void onMonoCheckboxClicked(LLUICtrl*, void* userdata);
+    void onCompileTargetChanged();
 
     static void finishLSLUpload(LLUUID itemId, LLUUID taskId, LLUUID newAssetId, LLSD response, bool isRunning);
     static void receiveExperienceIds(LLSD result, LLHandle<LLLiveLSLEditor> parent);
@@ -377,10 +401,10 @@ private:
 private:
     bool                mIsNew;
     //LLUUID mTransmitID;
-    LLCheckBoxCtrl*     mRunningCheckbox;
+    // LLCheckBoxCtrl*     mRunningCheckbox;
     BOOL                mAskedForRunningInfo;
     BOOL                mHaveRunningInfo;
-    LLButton*           mResetButton;
+    // LLButton*           mResetButton;
     LLPointer<LLViewerInventoryItem> mItem;
     BOOL                mCloseAfterSave;
     // need to save both text and script, so need to decide when done
@@ -388,16 +412,15 @@ private:
 
     BOOL                mIsSaving;
 
-    BOOL getIsModifiable() const { return mIsModifiable; } // Evaluated on load assert
-
-    LLCheckBoxCtrl* mMonoCheckbox;
     BOOL mIsModifiable;
 
+    LLButton*           mResetButton       { nullptr };
+    LLCheckBoxCtrl*     mRunningCheckbox   { nullptr };
+    LLComboBox*         mExperiences       { nullptr };
+    LLCheckBoxCtrl*     mExperienceEnabled { nullptr };
+    LLButton*           mViewProfileButton { nullptr };
 
-    LLComboBox*     mExperiences;
-    LLCheckBoxCtrl* mExperienceEnabled;
     LLSD            mExperienceIds;
-
     LLHandle<LLFloater> mExperienceProfile;
     std::string mObjectName;
 };

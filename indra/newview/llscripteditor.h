@@ -41,17 +41,20 @@ public:
         Params();
     };
 
-    virtual ~LLScriptEditor();
+    ~LLScriptEditor() override {};
 
     // LLView override
-    virtual void    draw() override;
+    void    draw() override;
     BOOL    postBuild() override;
 
-    void    initKeywords();
+    void    initKeywords(bool luau_language = false);
     void    loadKeywords();
-    /* virtual */ void  clearSegments();
-    LLKeywords::keyword_iterator_t keywordsBegin()  { return mKeywords.begin(); }
-    LLKeywords::keyword_iterator_t keywordsEnd()    { return mKeywords.end(); }
+    void    clearSegments();
+    LLKeywords::keyword_iterator_t keywordsBegin();
+    LLKeywords::keyword_iterator_t keywordsEnd();
+    LLKeywords& getKeywords();
+    bool    getIsLuauLanguage() { return mLuauLanguage; }
+    void    setLuauLanguage(bool luau_language) { mLuauLanguage = luau_language; }
 
 //    static std::string getScriptFontSize();
 //    LLFontGL* getScriptFont();
@@ -63,12 +66,15 @@ public:
 
 private:
     void    drawLineNumbers();
-    /* virtual */ void  updateSegments() override;
-    /* virtual */ void  drawSelectionBackground() override;
+    void  updateSegments() override;
+    void  drawSelectionBackground() override;
     void    loadKeywords(const std::string& filename_keywords,
                          const std::string& filename_colors);
 
-    LLKeywords  mKeywords;
+    LLKeywords  mKeywordsLua;
+    LLKeywords  mKeywordsLSL;
+    bool        mLuauLanguage;
+
     bool        mShowLineNumbers;
 //    bool mUseDefaultFontSize;
     boost::signals2::connection mFontNameConnection;

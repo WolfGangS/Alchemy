@@ -338,11 +338,11 @@ void LLAssetRecoverQueue::onCreateItem(const LLUUID& idItem)
         LLResourceUploadInfo::ptr_t uploadInfo;
         switch (pItem->getType())
         {
-            case LLAssetType::AT_LSL_TEXT:
-                strCapsUrl = gAgent.getRegion()->getCapability("UpdateScriptAgent");
-                uploadInfo = std::make_shared<LLScriptAssetUpload>(idItem, strBuffer,
-                                                                   boost::bind(&LLAssetRecoverQueue::onSavedAsset, this, _1, _4), nullptr);
-                break;
+            // case LLAssetType::AT_LSL_TEXT:
+            //     strCapsUrl = gAgent.getRegion()->getCapability("UpdateScriptAgent");
+            //     uploadInfo = std::make_shared<LLScriptAssetUpload>(idItem, strBuffer,
+            //                                                        boost::bind(&LLAssetRecoverQueue::onSavedAsset, this, _1, _4), nullptr);
+            //     break;
             case LLAssetType::AT_NOTECARD:
                 strCapsUrl = gAgent.getRegion()->getCapability("UpdateNotecardAgentInventory");
                 uploadInfo = std::make_shared<LLBufferedAssetUploadInfo>(itItem->idItem, LLAssetType::AT_NOTECARD, strBuffer,

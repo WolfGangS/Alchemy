@@ -2627,6 +2627,17 @@ void LLVOVolume::syncMediaData(S32 texture_index, const LLSD &media_data, bool m
         }
         viewer_media_t media_impl = LLViewerMedia::getInstance()->updateMediaImpl(mep, previous_url, update_from_self, isHUDAttachment());
 
+        static LLCachedControl<bool> media_autoplay_huds(gSavedSettings, "MediaAutoPlayHuds", true);
+        bool was_loaded = media_impl->hasMedia();
+        if (isHUDAttachment() && media_autoplay_huds && !was_loaded)
+        {
+            std::string url = mep->getCurrentURL();
+            if (media_impl->getCurrentMediaURL() != url)
+            {
+                media_impl->navigateTo(url, "", false, true);
+            }
+        }
+
         addMediaImpl(media_impl, texture_index) ;
     }
     else

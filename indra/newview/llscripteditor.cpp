@@ -55,11 +55,11 @@ LLScriptEditor::LLScriptEditor(const Params& p)
     }
 }
 
-LLScriptEditor::~LLScriptEditor()
-{
-    mFontNameConnection.disconnect();
-    mFontSizeConnection.disconnect();
-}
+// LLScriptEditor::~LLScriptEditor()
+// {
+//     mFontNameConnection.disconnect();
+//     mFontSizeConnection.disconnect();
+// }
 
 BOOL LLScriptEditor::postBuild()
 {
@@ -129,6 +129,8 @@ void LLScriptEditor::drawLineNumbers()
 
         S32 last_line_num = -1;
 
+        S32 luaOffset = mLuauLanguage ? 1 : 0;
+
         for (S32 cur_line = first_line; cur_line < num_lines; cur_line++)
         {
             line_info& line = mLineInfoList[cur_line];
@@ -142,7 +144,7 @@ void LLScriptEditor::drawLineNumbers()
             // draw the line numbers
             if(line.mLineNum != last_line_num && line.mRect.mTop <= scrolled_view_rect.mTop)
             {
-                const LLWString ltext = utf8str_to_wstring(llformat("%d", line.mLineNum ));
+                const LLWString ltext = utf8str_to_wstring(llformat("%d", line.mLineNum + luaOffset));
                 BOOL is_cur_line = cursor_line == line.mLineNum;
                 const U8 style = is_cur_line ? LLFontGL::BOLD : LLFontGL::NORMAL;
                 const LLColor4 fg_color = is_cur_line ? mCursorColor : mReadOnlyFgColor;
@@ -164,20 +166,24 @@ void LLScriptEditor::drawLineNumbers()
     }
 }
 
-void LLScriptEditor::initKeywords()
+void LLScriptEditor::initKeywords(bool luau_language)
 {
-    mKeywords.initialize(LLSyntaxIdLSL::getInstance()->getKeywordsXML());
+    mKeywordsLua.initialize(LLSyntaxLua::getInstance()->getKeywordsXML(), true);
+    mKeywordsLSL.initialize(LLSyntaxIdLSL::getInstance()->getKeywordsXML(), false);
+
+    mLuauLanguage = luau_language;
+
 }
 
 void LLScriptEditor::loadKeywords()
 {
     LL_PROFILE_ZONE_SCOPED;
-    mKeywords.processTokens();
+    getKeywords().processTokens();
 
     LLStyleConstSP style = new LLStyle(LLStyle::Params().font(getFont()).color(mDefaultColor));
 
     segment_vec_t segment_list;
-    mKeywords.findSegments(&segment_list, getWText(), *this, style);
+    getKeywords().findSegments(&segment_list, getWText(), *this, style);
 
     mSegments.clear();
     segment_set_t::iterator insert_it = mSegments.begin();
@@ -189,7 +195,7 @@ void LLScriptEditor::loadKeywords()
 
 void LLScriptEditor::updateSegments()
 {
-    if (mReflowIndex < S32_MAX && mKeywords.isLoaded() && mParseOnTheFly)
+    if (mReflowIndex < S32_MAX && getKeywords().isLoaded() && mParseOnTheFly)
     {
         LL_PROFILE_ZONE_SCOPED;
 
@@ -197,7 +203,7 @@ void LLScriptEditor::updateSegments()
 
         // HACK:  No non-ascii keywords for now
         segment_vec_t segment_list;
-        mKeywords.findSegments(&segment_list, getWText(), *this, style);
+        getKeywords().findSegments(&segment_list, getWText(), *this, style);
 
         clearSegments();
         for (segment_vec_t::iterator list_it = segment_list.begin(); list_it != segment_list.end(); ++list_it)
@@ -215,6 +221,22 @@ void LLScriptEditor::clearSegments()
     {
         mSegments.clear();
     }
+}
+
+
+LLKeywords::keyword_iterator_t LLScriptEditor::keywordsBegin()
+{
+    return mLuauLanguage ? mKeywordsLua.begin() : mKeywordsLSL.begin();
+}
+
+LLKeywords::keyword_iterator_t LLScriptEditor::keywordsEnd()
+{
+    return mLuauLanguage ? mKeywordsLua.end() : mKeywordsLSL.end();
+}
+
+LLKeywords& LLScriptEditor::getKeywords()
+{
+    return mLuauLanguage ? mKeywordsLua : mKeywordsLSL;
 }
 
 // Most of this is shamelessly copied from LLTextBase
