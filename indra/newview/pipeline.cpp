@@ -2853,7 +2853,9 @@ void LLPipeline::updateCull(LLCamera& camera, LLCullResult& result)
         LLVOCachePartition* vo_part = region->getVOCachePartition();
         if(vo_part)
         {
-            vo_part->cull(camera, sUseOcclusion > 0);
+            // vo_part->cull(camera, sUseOcclusion > 0);
+            // Area Search
+            vo_part->cull(camera, sUseOcclusion > 0 && !gAgent.getALAreaSearchActive());
         }
     }
 

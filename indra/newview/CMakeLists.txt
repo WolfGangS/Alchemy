@@ -151,6 +151,8 @@ set(viewer_SOURCE_FILES
     ao.cpp
     aoengine.cpp
     aoset.cpp
+    alareasearch.cpp
+    alareasearchmenu.cpp
     alassetblocklist.cpp
     alavataractions.cpp
     alavatargroups.cpp
@@ -196,6 +198,7 @@ set(viewer_SOURCE_FILES
     alpanelsearchweb.cpp
     alpanelstreaminfo.cpp
     alpickitem.cpp
+    alscrolllistctrl.cpp
     alstreaminfo.cpp
     altoolalign.cpp
     alunzip.cpp
@@ -912,6 +915,8 @@ set(viewer_HEADER_FILES
     ao.h
     aoengine.h
     aoset.h
+    alareasearch.h
+    alareasearchmenu.h
     alassetblocklist.h
     alavataractions.h
     alavatargroups.h
@@ -956,6 +961,7 @@ set(viewer_HEADER_FILES
     alpanelsearchweb.h
     alpanelstreaminfo.h
     alpickitem.h
+    alscrolllistctrl.h
     alstreaminfo.h
     altoolalign.h
     alunzip.h

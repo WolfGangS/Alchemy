@@ -31,6 +31,9 @@
 #include "llselectmgr.h"
 #include "llmaterialmgr.h"
 
+// Area Search
+#include "alareasearch.h"
+
 // library includes
 #include "llcachename.h"
 #include "llavatarnamecache.h"
@@ -6208,6 +6211,14 @@ void LLSelectMgr::processObjectProperties(LLMessageSystem* msg, void** user_data
 
     // hack for left-click buy object
     LLToolPie::selectionPropertiesReceived();
+
+    // Area Search
+    ALAreaSearch* area_search_floater = LLFloaterReg::findTypedInstance<ALAreaSearch>("area_search");
+    if (area_search_floater)
+    {
+        area_search_floater->processObjectProperties(msg);
+    }
+    // / Area Search
 }
 
 // static

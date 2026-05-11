@@ -302,12 +302,18 @@ public:
 
     void changeInterestListMode(const std::string & new_mode);
     const std::string & getInterestListMode() const { return mInterestListMode; }
+    // Area Search
+    void setALAreaSearchActive(bool enabled) { mALAreaSearchActive = enabled; }
+    bool getALAreaSearchActive() const { return mALAreaSearchActive; }
+    // / Area Search
 
 private:
     LLViewerRegion  *mRegionp;
     region_changed_signal_t                 mRegionChangedSignal;
 
     std::string                             mInterestListMode;  // How agent wants regions to send updates
+    // Area Search
+    bool mALAreaSearchActive;
 
     //--------------------------------------------------------------------
     // History
