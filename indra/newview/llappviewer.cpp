@@ -48,6 +48,7 @@
 #include "llagentwearables.h"
 #include "lldirpicker.h"
 #include "llfloaterimcontainer.h"
+#include "llfloaterpreference.h"
 #include "llimprocessing.h"
 #include "llwindow.h"
 #include "llviewerstats.h"
@@ -57,6 +58,7 @@
 #include "llmarketplacenotifications.h"
 #include "llmd5.h"
 #include "llmeshrepository.h"
+#include "llpanelpreferencegamecontrol.h"
 #include "llpumpio.h"
 #include "llmimetypes.h"
 #include "llslurl.h"
@@ -64,6 +66,7 @@
 #include "llfocusmgr.h"
 #include "llurlfloaterdispatchhandler.h"
 #include "llviewerjoystick.h"
+#include "llgamecontrol.h"
 #include "llcalc.h"
 #include "llconversationlog.h"
 #if LL_WINDOWS
@@ -230,6 +233,7 @@
 #include "llvosurfacepatch.h"
 #include "llviewerfloaterreg.h"
 #include "llcommandlineparser.h"
+#include "llfloaterpreference.h"
 #include "llfloatermemleak.h"
 #include "llfloaterreg.h"
 #include "llfloatersimplesnapshot.h"
@@ -1242,6 +1246,31 @@ bool LLAppViewer::init()
         joystick->setNeedsReset(true);
     }
 
+    LLGameControl::init(gDirUtilp->getExpandedFilename(LL_PATH_APP_SETTINGS, "gamecontrollerdb.txt"),
+        [](const std::vector<std::string>& keys) -> LLSD
+        {
+            LLSD result = LLSD::emptyMap();
+            for (const std::string& key : keys)
+            {
+                if (gSavedSettings.controlExists(key))
+                {
+                    result[key] = gSavedSettings.getLLSD(key);
+                }
+            }
+            return result;
+        },
+        [](const LLSD& key_values)
+        {
+            for (auto it = key_values.beginMap(); it != key_values.endMap(); ++it)
+            {
+                if (gSavedSettings.controlExists(it->first))
+                {
+                    gSavedSettings.setLLSD(it->first, it->second);
+                }
+            }
+        },
+        []() { LLPanelPreferenceGameControl::updateDeviceList(); });
+
     try
     {
         initializeSecHandler();
@@ -1455,6 +1484,47 @@ bool LLAppViewer::frame()
     return ret;
 }
 
+void sendGameControlInput()
+{
+    LLMessageSystem* msg = gMessageSystem;
+    const LLGameControl::State& state = LLGameControl::getState();
+
+    msg->newMessageFast(_PREHASH_GameControlInput);
+    msg->nextBlock("AgentData");
+    msg->addUUID("AgentID", gAgentID);
+    msg->addUUID("SessionID", gAgentSessionID);
+
+    size_t num_indices = state.mAxes.size();
+    for (U8 i = 0; i < num_indices; ++i)
+    {
+        if (state.mAxes[i] != state.mPrevAxes[i])
+        {
+            // only pack an axis if it differs from previously packed value
+            msg->nextBlockFast(_PREHASH_AxisData);
+            msg->addU8Fast(_PREHASH_Index, i);
+            msg->addS16Fast(_PREHASH_Value, state.mAxes[i]);
+        }
+    }
+
+    U32 button_flags = state.mButtons;
+    if (button_flags > 0)
+    {
+        std::vector<U8> buttons;
+        for (U8 i = 0; i < LLGameControl::NUM_BUTTONS; i++)
+        {
+            if (button_flags & (0x1 << i))
+            {
+                buttons.push_back(i);
+            }
+        }
+        msg->nextBlockFast(_PREHASH_ButtonData);
+        msg->addBinaryDataFast(_PREHASH_Data, (void*)(buttons.data()), narrow(buttons.size()));
+    }
+
+    LLGameControl::updateResendPeriod();
+    gAgent.sendMessage();
+}
+
 bool LLAppViewer::doFrame()
 {
     LL_RECORD_BLOCK_TIME(FTM_FRAME);
@@ -1527,7 +1597,7 @@ bool LLAppViewer::doFrame()
                     LL_WARNS() << " Someone took over my signal/exception handler (post messagehandling)!" << LL_ENDL;
                 }
 
-                gViewerWindow->getWindow()->gatherInput();
+                gViewerWindow->getWindow()->gatherInput(gFocusMgr.getAppHasFocus());
             }
 
             //memory leaking simulation
@@ -2202,6 +2272,8 @@ bool LLAppViewer::cleanup()
         // Cleanup joystick singleton
         LLViewerJoystick::deleteSingleton();
     }
+
+    LLGameControl::terminate();
 
     LL_INFOS() << "Shutting down message system" << LL_ENDL;
     end_messaging_system();
@@ -5298,6 +5370,30 @@ void LLAppViewer::idle()
             gAgent.autoPilot(&yaw);
         }
 
+        // get control flags from each side
+        U32 control_flags = gAgent.getControlFlags();
+        U32 game_control_action_flags = LLGameControl::computeInternalActionFlags();
+
+        // apply to GameControl
+        LLGameControl::setExternalInput(control_flags, gAgent.getGameControlButtonsFromKeys());
+        bool should_send_game_control = LLGameControl::computeFinalStateAndCheckForChanges();
+        if (LLPanelPreferenceGameControl::isWaitingForInputChannel())
+        {
+            LLPanelPreferenceGameControl::applyGameControlInput();
+            // skip this send because input is being used to set preferences
+            should_send_game_control = false;
+        }
+        if (should_send_game_control)
+        {
+            sendGameControlInput();
+        }
+
+        // apply to AvatarControl
+        if (LLGameControl::isEnabled() && LLGameControl::willControlAvatar())
+        {
+            gAgent.applyExternalActionFlags(game_control_action_flags);
+        }
+
         send_agent_update(false);
 
         // After calling send_agent_update() in the mainloop we always clear
@@ -5568,6 +5664,10 @@ void LLAppViewer::idle()
     else if (LLViewerJoystick::getInstance()->getOverrideCamera())
     {
         LLViewerJoystick::getInstance()->moveFlycam();
+    }
+    else if (gAgent.isUsingFlycam())
+    {
+        gAgent.updateFlycam();
     }
     else
     {

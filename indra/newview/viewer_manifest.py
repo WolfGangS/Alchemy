@@ -81,6 +81,7 @@ class ViewerManifest(LLManifest):
                 self.exclude("logcontrol.xml")
                 self.exclude("logcontrol-dev.xml")
                 self.path("*.ini")
+                self.path("*.txt")
                 self.path("*.xml")
 
                 # include the entire shaders directory recursively
@@ -818,6 +819,7 @@ class DarwinManifest(ViewerManifest):
             # CEF framework goes inside Contents/Frameworks.
             # Remember where we parked this car.
             with self.prefix(src=relpkgdir, dst="Frameworks"):
+                self.path("libSDL3.dylib") # gamecontrol
                 # WebRTC libraries
                 with self.prefix(src=os.path.join(self.args['build'], os.pardir,
                                           'llwebrtc', self.args['configuration'])):

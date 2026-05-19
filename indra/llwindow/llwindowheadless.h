@@ -215,8 +215,8 @@ public:
     /*virtual*/ F32 getPixelAspectRatio() override { return 1.0f; }
     /*virtual*/ void setNativeAspectRatio(F32 ratio) override {}
 
-    /*virtual*/ void *getPlatformWindow() override { return 0; }
-    /*virtual*/ void bringToFront() override {}
+    void* getPlatformWindow() const override { return 0; }
+    void bringToFront() override {}
 
     LLWindowHeadless(LLWindowCallbacks* callbacks,
         const std::string& title, const std::string& name,

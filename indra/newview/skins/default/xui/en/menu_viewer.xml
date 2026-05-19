@@ -19,7 +19,7 @@
          label="Inventory..."
          name="Inventory"
          shortcut="control|I"
-		     visible="true">
+         visible="true">
         <menu_item_check.on_check
          function="Floater.Visible"
          parameter="inventory" />
@@ -844,8 +844,7 @@
              function="Floater.Show"
              parameter="snapshot" />
         </menu_item_call>
-        
-<menu_item_call
+        <menu_item_call
          label="360 snapshot"
          name="Capture 360">
             <menu_item_call.on_click
@@ -3044,6 +3043,22 @@ function="World.EnvPreset"
      name="Develop"
      tear_off="true"
      visible="false">
+        <menu
+         create_jump_keys="true"
+         label="Experimental Features"
+         name="Experimental Features"
+         tear_off="true">
+            <menu_item_check
+             label="GameControl"
+             name="ToggleGameControl">
+             <menu_item_check.on_check
+                 function="Advanced.CheckExperiment"
+                 parameter="GameControl" />
+             <menu_item_check.on_click
+                 function="Advanced.ToggleExperiment"
+                 parameter="GameControl" />
+            </menu_item_check>
+        </menu>
         <menu
          create_jump_keys="true"
          label="Consoles"

@@ -1458,5 +1458,7 @@ extern char const* const _PREHASH_Restitution;
 extern char const* const _PREHASH_GravityMultiplier;
 extern char const* const _PREHASH_IncludeInSearch;
 extern char const* const _PREHASH_RezRestoreToWorld;
+extern char const* const _PREHASH_GameControlInput;
+extern char const* const _PREHASH_AxisData;
 
 #endif

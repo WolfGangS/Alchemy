@@ -162,6 +162,9 @@ void init_sdl(const std::string& app_name)
             }
         }
     }
+#endif // LL_SDL_WINDOW
+    // We SDL_INIT_GAMECONTROLLER later in the startup process to make it
+    // more likely we'll catch initial SDL_CONTROLLERDEVICEADDED events.
 }
 
 void quit_sdl()

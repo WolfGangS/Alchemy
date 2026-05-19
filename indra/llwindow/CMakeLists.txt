@@ -12,6 +12,9 @@ include(UI)
 
 set(llwindow_BASE_SOURCE_FILES
   llcursortypes.cpp
+  llgamecontrol.cpp
+  llgamecontroltranslator.cpp
+  llsdl.cpp
   llkeyboard.cpp
   llkeyboardheadless.cpp
   llmousehandler.cpp
@@ -20,8 +23,12 @@ set(llwindow_BASE_SOURCE_FILES
   llwindowcallbacks.cpp
 )
 
+
 set(llwindow_BASE_HEADER_FILES
   llcursortypes.h
+  llgamecontrol.h
+  llgamecontroltranslator.h
+  llsdl.h
   llkeyboard.h
   llkeyboardheadless.h
   llmousehandler.h
@@ -37,6 +44,7 @@ set(llwindow_BASE_LINK_LIBRARIES
   llfilesystem
   llxml
   ll::glm
+  ll::SDL3
 )
 
 add_library(llwindow STATIC)

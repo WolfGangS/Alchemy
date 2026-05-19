@@ -138,7 +138,7 @@ public:
                                      void* win_callback,
                                      void* userdata) override;
 
-    U32 getRawWParam() { return mRawWParam; }
+    U32 getRawWParam() const { return mRawWParam; }
 
     void initWatchdog() override;
 
@@ -153,7 +153,7 @@ protected:
     HCURSOR loadColorCursor(LPCTSTR name);
     bool    isValid();
     void    moveWindow(const LLCoordScreen& position,const LLCoordScreen& size);
-    virtual LLSD    getNativeKeyData();
+    LLSD    getNativeKeyData() const override;
 
     // Changes display resolution. Returns true if successful
     bool    setDisplayResolution(S32 width, S32 height, S32 refresh);
@@ -179,7 +179,7 @@ protected:
     // Platform specific methods
     //
 
-    bool    getClientRectInScreenSpace(RECT* rectp);
+    bool    getClientRectInScreenSpace(RECT* rectp) const;
 
     static LRESULT CALLBACK mainWindowProc(HWND h_wnd, UINT u_msg, WPARAM w_param, LPARAM l_param);
 
@@ -277,9 +277,9 @@ public:
     LLSplashScreenWin32();
     virtual ~LLSplashScreenWin32();
 
-    /*virtual*/ void showImpl();
-    /*virtual*/ void updateImpl(const std::string& mesg);
-    /*virtual*/ void hideImpl();
+    void showImpl() override;
+    void updateImpl(const std::string& mesg) override;
+    void hideImpl() override;
 
 #if LL_WINDOWS
     static LRESULT CALLBACK windowProc(HWND h_wnd, UINT u_msg,

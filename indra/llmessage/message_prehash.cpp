@@ -1457,3 +1457,5 @@ char const* const _PREHASH_Restitution = LLMessageStringTable::getInstance()->ge
 char const* const _PREHASH_GravityMultiplier = LLMessageStringTable::getInstance()->getString("GravityMultiplier");
 char const* const _PREHASH_IncludeInSearch = LLMessageStringTable::getInstance()->getString("IncludeInSearch");
 char const* const _PREHASH_RezRestoreToWorld = LLMessageStringTable::getInstance()->getString("RezRestoreToWorld");
+char const* const _PREHASH_GameControlInput = LLMessageStringTable::getInstance()->getString("GameControlInput");
+char const* const _PREHASH_AxisData = LLMessageStringTable::getInstance()->getString("AxisData");
