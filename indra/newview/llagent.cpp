@@ -423,6 +423,8 @@ LLAgent::LLAgent() :
     mTeleportState(TELEPORT_NONE),
     mRegionp(NULL),
     mInterestListMode(IL_MODE_DEFAULT),
+    // Area Search
+    mALAreaSearchActive(false),
 
     mAgentOriginGlobal(),
     mPositionGlobal(),
@@ -3089,6 +3091,12 @@ void LLAgent::processMaturityPreferenceFromServer(const LLSD &result, U8 perferr
 // not (the default mode)
 void LLAgent::changeInterestListMode(const std::string &new_mode)
 {
+    // Area Search
+    if (new_mode == IL_MODE_DEFAULT && mALAreaSearchActive)
+    {
+        return;
+    }
+    // / Area Search
     if (new_mode != mInterestListMode)
     {
         mInterestListMode = new_mode;

@@ -32,6 +32,8 @@
 #include "llviewerfloaterreg.h"
 
 #include "ao.h"
+// Area Search
+#include "alareasearch.h"
 #include "alchatbar.h"
 // [SL:KB] - Patch: World-Derender | Checked: Catznip-3.2
 #include "alfloaterblocked.h"
@@ -581,6 +583,8 @@ void LLViewerFloaterReg::registerFloaters()
 
     // Alchemy Floaters
     LLFloaterReg::add("ao", "floater_ao.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<FloaterAO>);
+    // Area Search
+    LLFloaterReg::add("area_search", "floater_al_area_search.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<ALAreaSearch>);
     LLFloaterReg::add("asset_hex_editor", "floater_hex_editor.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<LLFloaterHexEditor>);
 // [SL:KB] - Patch: Build-AssetRecovery | Checked: 2011-11-24 (Catznip-3.2)
     LLFloaterReg::add("asset_recovery", "floater_asset_recovery.xml", (LLFloaterBuildFunc)&LLFloaterReg::build<LLFloaterAssetRecovery>);
