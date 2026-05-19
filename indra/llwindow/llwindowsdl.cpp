@@ -836,7 +836,7 @@ bool LLWindowSDL::isValid()
     return mWindow != nullptr;
 }
 
-bool LLWindowSDL::getVisible() const
+bool LLWindowSDL::getVisible()
 {
     bool result = true;
     if (mWindow)
@@ -850,7 +850,7 @@ bool LLWindowSDL::getVisible() const
     return result;
 }
 
-bool LLWindowSDL::getMinimized() const
+bool LLWindowSDL::getMinimized()
 {
     bool result = false;
     if (mWindow)
@@ -864,7 +864,7 @@ bool LLWindowSDL::getMinimized() const
     return result;
 }
 
-bool LLWindowSDL::getMaximized() const
+bool LLWindowSDL::getMaximized()
 {
     bool result = false;
     if (mWindow)
@@ -889,7 +889,7 @@ bool LLWindowSDL::maximize()
     return false;
 }
 
-bool LLWindowSDL::getPosition(LLCoordScreen *position) const
+bool LLWindowSDL::getPosition(LLCoordScreen *position)
 {
     if (mWindow)
     {
@@ -899,7 +899,7 @@ bool LLWindowSDL::getPosition(LLCoordScreen *position) const
     return false;
 }
 
-bool LLWindowSDL::getSize(LLCoordScreen *size) const
+bool LLWindowSDL::getSize(LLCoordScreen *size)
 {
     if (mWindow)
     {
@@ -910,7 +910,7 @@ bool LLWindowSDL::getSize(LLCoordScreen *size) const
     return false;
 }
 
-bool LLWindowSDL::getSize(LLCoordWindow *size) const
+bool LLWindowSDL::getSize(LLCoordWindow *size)
 {
     if (mWindow)
     {
@@ -989,7 +989,7 @@ void LLWindowSDL::swapBuffers()
     LL_PROFILER_GPU_COLLECT;
 }
 
-U32 LLWindowSDL::getFSAASamples() const
+U32 LLWindowSDL::getFSAASamples()
 {
     return mFSAASamples;
 }
@@ -999,7 +999,7 @@ void LLWindowSDL::setFSAASamples(const U32 samples)
     mFSAASamples = samples;
 }
 
-F32 LLWindowSDL::getGamma() const
+F32 LLWindowSDL::getGamma()
 {
     return 1.f / mGamma;
 }
@@ -1501,7 +1501,7 @@ bool LLWindowSDL::convertCoords(LLCoordGL from, LLCoordWindow *to)
     return true;
 }
 
-bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to) const
+bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to)
 {
     if (!to || !mWindow)
         return false;
@@ -1516,7 +1516,7 @@ bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordGL* to) const
     return true;
 }
 
-bool LLWindowSDL::convertCoords(LLCoordScreen from, LLCoordWindow* to) const
+bool LLWindowSDL::convertCoords(LLCoordScreen from, LLCoordWindow* to)
 {
     if (!to || !mWindow)
         return false;
@@ -1540,7 +1540,7 @@ bool LLWindowSDL::convertCoords(LLCoordScreen from, LLCoordWindow* to) const
     return true;
 }
 
-bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordScreen *to) const
+bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordScreen *to)
 {
     if (!to || !mWindow)
         return false;
@@ -1558,13 +1558,13 @@ bool LLWindowSDL::convertCoords(LLCoordWindow from, LLCoordScreen *to) const
     return true;
 }
 
-bool LLWindowSDL::convertCoords(LLCoordScreen from, LLCoordGL *to) const
+bool LLWindowSDL::convertCoords(LLCoordScreen from, LLCoordGL *to)
 {
     LLCoordWindow window_coord;
     return convertCoords(from, &window_coord) && convertCoords(window_coord, to);
 }
 
-bool LLWindowSDL::convertCoords(LLCoordGL from, LLCoordScreen *to) const
+bool LLWindowSDL::convertCoords(LLCoordGL from, LLCoordScreen *to)
 {
     LLCoordWindow window_coord;
     return convertCoords(from, &window_coord) && convertCoords(window_coord, to);
@@ -3239,7 +3239,7 @@ void LLWindowSDL::allowLanguageTextInput(LLPreeditor* preeditor, bool b)
     }
 }
 
-F32 LLWindowSDL::getSystemUISize()
+F32 LLWindowSDL::getSystemUISize() const
 {
     if(mWindow)
     {

@@ -137,7 +137,6 @@ void init_sdl(const std::string& app_name)
     {
         SDL_SetHint(std::get<0>(hint), std::get<1>(hint));
     }
-#endif
 
     // SDL_INIT_VIDEO is the only subsystem the viewer actually uses through
     // SDL3. Joystick / gamepad input goes through libndof (llviewerjoystick),
@@ -162,9 +161,10 @@ void init_sdl(const std::string& app_name)
             }
         }
     }
-#endif // LL_SDL_WINDOW
+    // LL_SDL_WINDOW
     // We SDL_INIT_GAMECONTROLLER later in the startup process to make it
     // more likely we'll catch initial SDL_CONTROLLERDEVICEADDED events.
+    #endif
 }
 
 void quit_sdl()

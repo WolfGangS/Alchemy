@@ -1167,12 +1167,12 @@ S32 LLScrollListCtrl::getItemIndex( LLScrollListItem* target_item ) const
     S32 index = 0;
     for (LLScrollListItem* item : mItemList)
     {
-        LLScrollListItem *itemp = *iter;
-        if (isFiltered(itemp))
+        //LLScrollListItem *itemp = *iter;
+        if (isFiltered(item))
         {
             continue;
         }
-        if (target_item == itemp)
+        if (target_item == item)
         {
             return index;
         }

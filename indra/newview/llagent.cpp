@@ -1520,7 +1520,7 @@ void LLAgent::pitch(F32 angle)
     const bool in_mouselook = gAgentCamera.cameraMouselook();
 
     // clamp pitch to limits
-    if ((angle >= 0.f) && (angle_from_skyward + angle > look_down_limit))
+    if (angle >= 0.f)
     {
         const F32 look_down_limit = (in_mouselook && useRealisticMouselook ? 160.f : 179.f) * DEG_TO_RAD;
         F32 angle_from_skyward = acos(mFrameAgent.getAtAxis() * skyward);
@@ -1529,7 +1529,7 @@ void LLAgent::pitch(F32 angle)
             angle = look_down_limit - angle_from_skyward;
         }
     }
-    else if ((angle < 0.f) && (angle_from_skyward + angle < look_up_limit))
+    else if (angle < 0.f)
     {
         const F32 look_up_limit = (in_mouselook && useRealisticMouselook ? 20.f : 5.f) * DEG_TO_RAD;
         const LLVector3& viewer_camera_pos = LLViewerCamera::getInstance()->getOrigin();
@@ -5349,13 +5349,13 @@ void LLAgent::applyExternalActionFlags(U32 outer_flags)
         {
             if (getRunning())
             {
-                clearRunning();
-                sendWalkRun(false);
+                gAgent.clearTempRun();
+                //gAgent.sendWalkRun(false);
             }
             else
             {
-                setRunning();
-                sendWalkRun(true);
+                gAgent.setTempRun();
+                //gAgent.sendWalkRun(true);
             }
         }
         mToggleRun = false;

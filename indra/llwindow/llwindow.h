@@ -63,16 +63,16 @@ public:
     virtual void show() = 0;
     virtual void hide() = 0;
     virtual void close() = 0;
-    virtual bool getVisible() const = 0;
-    virtual bool getMinimized() const = 0;
-    virtual bool getMaximized() const = 0;
+    virtual bool getVisible() = 0;
+    virtual bool getMinimized() = 0;
+    virtual bool getMaximized() = 0;
     virtual bool maximize() = 0;
     virtual void minimize() = 0;
     virtual void restore() = 0;
-    virtual bool getFullscreen() const { return mFullscreen; };
-    virtual bool getPosition(LLCoordScreen *position) const = 0;
-    virtual bool getSize(LLCoordScreen *size) const = 0;
-    virtual bool getSize(LLCoordWindow *size) const = 0;
+    virtual bool getFullscreen() { return mFullscreen; };
+    virtual bool getPosition(LLCoordScreen *position) = 0;
+    virtual bool getSize(LLCoordScreen *size) = 0;
+    virtual bool getSize(LLCoordWindow *size) = 0;
     virtual bool setPosition(LLCoordScreen position) = 0;
     bool setSize(LLCoordScreen size);
     bool setSize(LLCoordWindow size);
@@ -168,10 +168,10 @@ public:
     virtual bool copyTextToPrimary(const LLWString &src);
 
     virtual void flashIcon(F32 seconds) = 0;
-    virtual F32 getGamma() const = 0;
+    virtual F32 getGamma() = 0;
     virtual bool setGamma(const F32 gamma) = 0; // Set the gamma
     virtual void setFSAASamples(const U32 fsaa_samples) = 0; //set number of FSAA samples
-    virtual U32  getFSAASamples() const = 0;
+    virtual U32  getFSAASamples() = 0;
     virtual bool restoreGamma() = 0;            // Restore original gamma table (before updating gamma)
     ESwapMethod getSwapMethod() { return mSwapMethod; }
     virtual void processMiscNativeEvents();
@@ -183,12 +183,12 @@ public:
     // handy coordinate space conversion routines
     // NB: screen to window and vice verse won't work on width/height coordinate pairs,
     // as the conversion must take into account left AND right border widths, etc.
-    virtual bool convertCoords( LLCoordScreen from, LLCoordWindow *to) const = 0;
-    virtual bool convertCoords( LLCoordWindow from, LLCoordScreen *to) const = 0;
-    virtual bool convertCoords( LLCoordWindow from, LLCoordGL *to) const = 0;
-    virtual bool convertCoords( LLCoordGL from, LLCoordWindow *to) const = 0;
-    virtual bool convertCoords( LLCoordScreen from, LLCoordGL *to) const = 0;
-    virtual bool convertCoords( LLCoordGL from, LLCoordScreen *to) const = 0;
+    virtual bool convertCoords( LLCoordScreen from, LLCoordWindow *to) = 0;
+    virtual bool convertCoords( LLCoordWindow from, LLCoordScreen *to) = 0;
+    virtual bool convertCoords( LLCoordWindow from, LLCoordGL *to) = 0;
+    virtual bool convertCoords( LLCoordGL from, LLCoordWindow *to) = 0;
+    virtual bool convertCoords( LLCoordScreen from, LLCoordGL *to) = 0;
+    virtual bool convertCoords( LLCoordGL from, LLCoordScreen *to) = 0;
 
     // query supported resolutions
     virtual LLWindowResolution* getSupportedResolutions(S32 &num_resolutions) = 0;
