@@ -1817,7 +1817,7 @@ LLUrlEntryGameController::LLUrlEntryGameController()
     , pKeyHandler(NULL)
     , pControllerHandler(NULL)
 {
-    mPattern = boost::regex(APP_HEADER_REGEX "/gamecontroller/\\w+(\\?mode=\\w+)?$",
+    mPattern = boost::regex(APP_HEADER_REGEX "/gamecontroller/[\\w+-]+(\\?mode=\\w+)?$",
                             boost::regex::perl | boost::regex::icase);
     mMenuName = "menu_url_experience.xml";
 
