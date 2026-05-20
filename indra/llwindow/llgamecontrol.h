@@ -65,8 +65,16 @@
 // they are extracted from SDL, before being used anywhere.  See the
 // implementation in LLGameControllerManager::onAxis().
 
+// Interface to get controller binding from assigned command
+class LLGameControllerBindingToStringHandler
+{
+public:
+    virtual std::string getBindingAsString(const std::string& control) const = 0;
+    virtual bool hasHandlingDevice() const = 0;
+};
+
 // LLGameControl is a singleton with pure static public interface
-class LLGameControl : public LLSingleton<LLGameControl>
+class LLGameControl : public LLSingleton<LLGameControl>, public LLGameControllerBindingToStringHandler
 {
     LLSINGLETON_EMPTY_CTOR(LLGameControl);
     virtual ~LLGameControl();
@@ -368,5 +376,8 @@ public:
     static void applySettingsFromLLSD(const LLSD& settings);
 
     static void setDeviceOptions(const std::string& guid, const Options& options);
-};
 
+    // inherited from LLGameControllerBindingToStringHandler
+    virtual std::string getBindingAsString(const std::string& control) const override;
+    virtual bool hasHandlingDevice() const override;
+};

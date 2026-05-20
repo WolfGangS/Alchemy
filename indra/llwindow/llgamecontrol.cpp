@@ -1116,7 +1116,7 @@ void LLGameControllerManager::computeFinalState()
     // finish by accumulating "external" state (if enabled)
     U32 old_buttons = g_finalState.mButtons;
     g_finalState.mButtons = mButtonAccumulator;
-    if (g_translateAgentActions)
+    if (g_translateAgentActions || true)
     {
         // accumulate from mExternalState
         g_finalState.mButtons |= mExternalState.mButtons;
@@ -2163,4 +2163,23 @@ void LLGameControl::saveToSettings()
 void LLGameControl::setDeviceOptions(const std::string& guid, const Options& options)
 {
     g_manager.setDeviceOptions(guid, options);
+}
+
+// virtual, from LLGameControllerBindingToStringHandler
+std::string LLGameControl::getBindingAsString(const std::string& control) const
+{
+    // TODO : Need to map to active controllers set axis not just the channel name
+    // TODO : Need to get button mappings too
+    LLGameControl::InputChannel channel = g_manager.getChannelByAction(control);
+    if (channel.isNone())
+    {
+        return std::string();
+    }
+    return channel.getLocalName();
+}
+
+// virtual, from LLGameControllerBindingToStringHandler
+bool LLGameControl::hasHandlingDevice() const
+{
+    return g_enabled && !g_manager.mDevices.empty();
 }

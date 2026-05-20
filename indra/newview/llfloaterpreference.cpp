@@ -320,6 +320,38 @@ public:
 };
 LLKeybindingHandler gKeybindHandler;
 
+class LLGameControlBindingHandler: public LLCommandHandler
+{
+public:
+    // requires trusted browser to trigger
+    LLGameControlBindingHandler(): LLCommandHandler("gamecontroller", UNTRUSTED_CLICK_ONLY)
+    {
+    }
+
+    bool handle(const LLSD& params, const LLSD& query_map,
+                const std::string& grid, LLMediaCtrl* web)
+    {
+        if (params.size() < 1) return false;
+
+        LLFloaterPreference* prefsfloater = dynamic_cast<LLFloaterPreference*>
+            (LLFloaterReg::showInstance("preferences"));
+
+        if (prefsfloater)
+        {
+            // find 'controls' panel and bring it the front
+            LLTabContainer* tabcontainer = prefsfloater->getChild<LLTabContainer>("pref core");
+            LLPanel* panel = prefsfloater->getChild<LLPanel>("game_control");
+            if (tabcontainer && panel)
+            {
+                tabcontainer->selectTabPanel(panel);
+            }
+        }
+
+        return true;
+    }
+};
+LLGameControlBindingHandler gGameControlBindingHandler;
+
 
 //////////////////////////////////////////////
 // LLFloaterPreference
