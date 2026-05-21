@@ -222,6 +222,9 @@ public:
         U8 mapAxis(U8 axis) const;
         U8 mapButton(U8 button) const;
 
+        U8 unmapAxis(U8 axis) const;
+        U8 unmapButton(U8 button) const;
+
         S16 fixAxisValue(U8 axis, S16 value) const;
 
         std::string saveToString(const std::string& name, bool force_empty = false) const;

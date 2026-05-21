@@ -1841,29 +1841,24 @@ std::string LLUrlEntryGameController::getLabel(const std::string& url, const LLU
             }
             // Debug text change for testing
             keybind = keybind + " (Game Control)";
+            return keybind;
         }
     }
     // Fallback to key binding if game control binding is not found
     if (pKeyHandler && keybind.empty())
     {
-        keybind = pKeyHandler->getKeyBindingAsString(getMode(url), control);
+        LLStringUtil::toLower(control);
+        keybind = pKeyHandler->getKeyBindingAsString(getMode(url), "game_control_" + control);
         LL_WARNS() << "Key Binding Translate:" << control << " = " << keybind << LL_ENDL;
         if(!keybind.empty())
         {
             // Debug text change for testing
             keybind = keybind + " (Key Binding)";
+            return keybind;
         }
     }
 
-    std::map<std::string, LLLocalizationData>::iterator iter = mLocalizations.find(control);
-    if (iter != mLocalizations.end())
-    {
-        // Debug text change for testing
-        return iter->second.mLocalization + " (Translated): " + keybind;
-        // return iter->second.mLocalization + ": " + keybind;
-    }
-
-    return control + ": " + keybind;
+    return "Unbound Control: " + control;
 }
 
 std::string LLUrlEntryGameController::getTooltip(const std::string& url) const
