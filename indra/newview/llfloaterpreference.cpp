@@ -524,7 +524,6 @@ bool LLFloaterPreference::postBuild()
     mDisabledPopups = getChild<LLScrollListCtrl>("disabled_popups");
     mEnablePopupBtn = getChild<LLButton>("enable_this_popup");
     mDisablePopupBtn = getChild<LLButton>("disable_this_popup");
-    setPanelVisibility("game_control", LLGameControl::isEnabled());
 
     gSavedSettings.getControl("ChatFontSize")->getSignal()->connect(boost::bind(&LLFloaterIMSessionTab::processChatHistoryStyleUpdate, false));
 
@@ -1960,7 +1959,6 @@ void LLAvatarComplexityControls::setIndirectMaxArc()
 
 void LLFloaterPreference::refresh()
 {
-    setPanelVisibility("game_control", LLGameControl::isEnabled());
     LLTabContainer* tabcontainer = getChild<LLTabContainer>("pref core");
     for (LLView* view : *tabcontainer->getChildList())
     {
