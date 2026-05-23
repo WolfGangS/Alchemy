@@ -9,12 +9,29 @@
     name="game_control_panel"
     top="1"
     width="517">
+<tab_container
+    name="game_control_tabs"
+    layout="topleft"
+    follows="all"
+    top="1"
+    left="2"
+    right="-2"
+    bottom="-32">
+    <panel
+        name="tab_game_control_general"
+ follows="all"
+ height="408"
+ layout="topleft"
+ left="102"
+ width="517"
+        label="Controls">
    <check_box
         name="game_control_enabled"
         control_name="EnableGameControl"
         label="Gamecontroller"
         tool_tip="Enable Gamecontroller support"
         layout="topleft"
+   follows="top|left"
         height="15"
         left="10"
         top="10"/>
@@ -23,6 +40,7 @@
         control_name="GameControlToAgent"
         label="GameControl moves avatar and flycam"
         layout="topleft"
+        follows="top|left"
         height="15"
         left="250"
         top="10"/>
@@ -31,6 +49,7 @@
         control_name="GameControlToServer"
         label="Send GameControl Data to server"
         layout="topleft"
+        follows="top|left"
         height="15"
         left="10"
         top="30"/>
@@ -39,25 +58,29 @@
         control_name="AgentToGameControl"
         label="Avatar actions interpreted as GameControl"
         layout="topleft"
+        follows="top|left"
         height="15"
         left="250"
         top="30"/>
-    <tab_container
-        name="game_control_tabs"
-        layout="topleft"
-        follows="all"
-        top="50"
-        left="2"
-        right="-2"
-        bottom="-32">
-        <panel
-            name="tab_channel_mappings"
-            label="Channel mappings">
-            <scroll_list
+        <scroll_list
+   draw_heading="true"
+   follows="all"
+   layout="topleft"
+   column_padding="0"
+   top="50"
+   left="3"
+   bottom="-4"
+   right="-3"
+   can_sort="false"
+   multi_select="false"
+   name="action_table"
+   selection_type="header"
+    fg_disable_color="ScrollUnselectedColor">
+            <!-- <scroll_list
                 name="action_table"
                 layout="topleft"
-                follows="all"
-                top="1"
+                follows="top|left"
+                top="50"
                 left="6"
                 right="-5"
                 bottom="-4"
@@ -65,20 +88,28 @@
                 column_padding="0"
                 multi_select="false"
                 selection_type="header"
-                fg_disable_color="ScrollUnselectedColor">
+                fg_disable_color="ScrollUnselectedColor"> -->
                 <scroll_list.columns
-                    name="action"
-                    label="Action"
-                    relative_width="0.25" />
-                <scroll_list.columns
-                    name="channel"
-                    label="Channel"
-                    relative_width="0.75" />
+     relative_width="0.34"
+     label="Action"
+     name="action" />
+    <scroll_list.columns
+     relative_width="0.22"
+     label="Primary Control"
+     name="channel" />
+    <scroll_list.columns
+     relative_width="0.22"
+     label="Alternate 1"
+     name="lst_ctrl2" />
+    <scroll_list.columns
+     relative_width="0.22"
+     label="Alternate 2"
+     name="lst_ctrl3" />
             </scroll_list>
         </panel>
         <panel
             name="tab_device_settings"
-            label="Device settings">
+            label="Device Specific Settings">
             <text
                 type="string"
                 name="nodevice_message"

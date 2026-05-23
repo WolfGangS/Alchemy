@@ -31,6 +31,7 @@
  */
 
 #include "llgamecontroltranslator.h"
+#include "llgamecontrol.h"
 #include "llsd.h"
 
 
@@ -38,6 +39,83 @@ using ActionToMaskMap = LLGameControlTranslator::ActionToMaskMap;
 
 LLGameControlTranslator::LLGameControlTranslator()
 {
+}
+
+
+
+const S32 LLGameControlTranslator::calculateTranslatedButtons(
+    const ControllerMappings mappings,
+    const std::vector<S32> DOF,
+    const U32 buttons
+)
+{
+    // HACK: supply hard-coded threshold for ON/OFF zones
+    constexpr S32 AXIS_THRESHOLD = 32768 / 8;
+
+    S32 result = 0;
+
+
+
+    size_t dofSize = DOF.size();
+    for(const ControllerMapping mapping : mappings)
+    {
+        const ControllerActionTypeIndex from = mapping.first;
+        const U32 to = mapping.second;
+
+        U8 btn = 0;
+
+        if(from.first == LLGameControl::ActionType::BUTTON)
+        {
+            btn = (buttons & (1 << from.second)) > 0;
+        }
+        else if(from.first == LLGameControl::ActionType::DOF)
+        {
+            if(from.second < dofSize) {
+                btn = DOF[from.second] > AXIS_THRESHOLD;
+            }
+        }
+
+        result |= to * btn;
+    }
+    return result;
+}
+
+void LLGameControlTranslator::calculateTranslatedAxes(
+    const ControllerMappings mappings,
+    const std::vector<S32> DOF,
+    const U32 buttons,
+    std::vector<S32>& outDOF
+)
+{
+    std::fill(outDOF.begin(), outDOF.end(), 0);
+
+    size_t outDOFSize = outDOF.size();
+    size_t dofSize = DOF.size();
+    for(const ControllerMapping mapping : mappings)
+    {
+        const ControllerActionTypeIndex from = mapping.first;
+        const U32 to = mapping.second;
+
+        if(to >= outDOFSize)
+        {
+            continue;
+        }
+
+        S32 dof = 0;
+
+        if(from.first == LLGameControl::ActionType::BUTTON)
+        {
+            dof = 1.0 * ((buttons & (1 << from.second)) > 0);
+        }
+        else if(from.first == LLGameControl::ActionType::DOF)
+        {
+            if(from.second < dofSize) {
+                dof = DOF[from.second];
+            }
+        }
+
+        outDOF[to] = dof;
+    }
 }
 
 void LLGameControlTranslator::setAvailableActionMasks(ActionToMaskMap& action_to_mask)

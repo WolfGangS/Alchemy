@@ -2008,8 +2008,8 @@ void LLTextBase::reflow()
             // keep cursor in same vertical position on screen when selecting text
             LLRect new_cursor_rect_doc = getDocRectFromDocIndex(mCursorPos);
             LLRect old_cursor_rect = cursor_rect;
-            old_cursor_rect.mTop = mVisibleTextRect.mTop - cursor_rect.mTop;
-            old_cursor_rect.mBottom = mVisibleTextRect.mTop - cursor_rect.mBottom;
+            old_cursor_rect.mTop = mVisibleTextRect.getHeight() - cursor_rect.mTop;
+            old_cursor_rect.mBottom = mVisibleTextRect.getHeight()- cursor_rect.mBottom;
 
             mScroller->scrollToShowRect(new_cursor_rect_doc, old_cursor_rect);
         }
@@ -2020,8 +2020,8 @@ void LLTextBase::reflow()
 
             // pass in desired rect in the coordinate frame of the document viewport
             LLRect old_first_char_rect = first_char_rect;
-            old_first_char_rect.mTop = mVisibleTextRect.mTop - first_char_rect.mTop;
-            old_first_char_rect.mBottom = mVisibleTextRect.mTop - first_char_rect.mBottom;
+            old_first_char_rect.mTop = mVisibleTextRect.getHeight() - first_char_rect.mTop;
+            old_first_char_rect.mBottom = mVisibleTextRect.getHeight() - first_char_rect.mBottom;
 
             mScroller->scrollToShowRect(new_first_char_rect, old_first_char_rect);
         }

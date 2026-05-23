@@ -104,6 +104,41 @@ namespace std
         }
         return "UNKNOWN";
     }
+
+    string to_string(SDL_GamepadButton button)
+    {
+        return SDL_GetGamepadStringForButton(button);
+    }
+
+    string to_string(SDL_GamepadAxis axis)
+    {
+        return SDL_GetGamepadStringForAxis(axis);
+    }
+
+    string to_string(SDL_GamepadButtonLabel label)
+    {
+        switch (label)
+        {
+        case SDL_GAMEPAD_BUTTON_LABEL_A:
+            return "a";
+        case SDL_GAMEPAD_BUTTON_LABEL_B:
+            return "b";
+        case SDL_GAMEPAD_BUTTON_LABEL_X:
+            return "x";
+        case SDL_GAMEPAD_BUTTON_LABEL_Y:
+            return "y";
+        case SDL_GAMEPAD_BUTTON_LABEL_CROSS:
+            return "cross";
+        case SDL_GAMEPAD_BUTTON_LABEL_CIRCLE:
+            return "circle";
+        case SDL_GAMEPAD_BUTTON_LABEL_SQUARE:
+            return "square";
+        case SDL_GAMEPAD_BUTTON_LABEL_TRIANGLE:
+            return "triangle";
+        default:
+            return "UNKOWN";
+        }
+    }
 }
 
 // Util for dumping SDL_JoystickGUID info
@@ -404,6 +439,8 @@ private:
     std::vector <std::string> mFlycamActions;
     std::vector<LLGameControl::InputChannel> mFlycamChannels;
     std::vector<S32> mAxesAccumulator;
+    std::vector<S32> mAxesDirAccumulator;
+    std::vector<S32> mAxesDirMappedAccumulator;
     U32 mButtonAccumulator { 0 };
     U32 mLastActiveFlags { 0 };
     U32 mLastFlycamActionFlags { 0 };
@@ -625,7 +662,7 @@ U8 LLGameControl::Options::unmapAxis(U8 axis) const
 
 U8 LLGameControl::Options::unmapButton(U8 button) const
 {
-    
+
     if (button >= NUM_BUTTONS)
     {
         LL_WARNS("SDL3") << "Invalid unmap button: " << button << LL_ENDL;
@@ -823,6 +860,8 @@ bool LLGameControl::Options::loadFromString(std::string options)
 LLGameControllerManager::LLGameControllerManager()
 {
     mAxesAccumulator.resize(LLGameControl::NUM_AXES, 0);
+    mAxesDirAccumulator.resize(LLGameControl::NUM_AXES * 2, 0);
+    mAxesDirMappedAccumulator.resize(LLGameControl::NUM_AXES * 2, 0);
 
     mAnalogActions = { "push", "slide", "jump", "turn", "look" };
     mBinaryActions = { "toggle_run", "toggle_fly", "toggle_flycam", "stop" };
@@ -1159,6 +1198,7 @@ void LLGameControllerManager::accumulateInternalState()
 {
     // clear the old state
     std::fill(mAxesAccumulator.begin(), mAxesAccumulator.end(), 0);
+    std::fill(mAxesDirAccumulator.begin(), mAxesDirAccumulator.end(), 0);
     mButtonAccumulator = 0;
 
     // accumulate the controllers
@@ -1172,14 +1212,79 @@ void LLGameControllerManager::accumulateInternalState()
             mAxesAccumulator[i] += (S32)device.mState.mAxes[i];
         }
     }
+
+    for(size_t i = 0; i < LLGameControl::NUM_AXES; ++i)
+    {
+        if(mAxesAccumulator[i] >= 0) {
+            mAxesDirAccumulator[i*2] = mAxesAccumulator[i];
+        }
+        else
+        {
+            mAxesDirAccumulator[(i*2)+1] = abs(mAxesAccumulator[i]);
+        }
+    }
 }
 
 void LLGameControllerManager::computeFinalState()
 {
+    static const LLGameControlTranslator::ControllerMappings axis_mappings = {
+        // Axes
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::LEFT},          LLGameControl::DOFAction::LEFT},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::RIGHT},         LLGameControl::DOFAction::RIGHT},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::FWD},           LLGameControl::DOFAction::FWD},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::BACK},          LLGameControl::DOFAction::BACK},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::TURN_LEFT},     LLGameControl::DOFAction::TURN_LEFT},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::TURN_RIGHT},    LLGameControl::DOFAction::TURN_RIGHT},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::LOOK_UP},       LLGameControl::DOFAction::LOOK_UP},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::LOOK_DOWN},     LLGameControl::DOFAction::LOOK_DOWN},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::UP},            LLGameControl::DOFAction::UP},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::DOWN},          LLGameControl::DOFAction::DOWN},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::ROLL_LEFT},     LLGameControl::DOFAction::ROLL_LEFT},
+        {{LLGameControl::ActionType::DOF, LLGameControl::DOFAction::ROLL_RIGHT},    LLGameControl::DOFAction::ROLL_RIGHT}
+    };
+
+    static const LLGameControlTranslator::ControllerMappings button_mappings = {
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_A},              (U32)1 << LLGameControl::Button::BUTTON_X},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_B},              (U32)1 << LLGameControl::Button::BUTTON_Y},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_X},              (U32)1 << LLGameControl::Button::BUTTON_X},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_Y},              (U32)1 << LLGameControl::Button::BUTTON_Y},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_BACK},           (U32)1 << LLGameControl::Button::BUTTON_BACK},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_GUIDE},          (U32)1 << LLGameControl::Button::BUTTON_GUIDE},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_START},          (U32)1 << LLGameControl::Button::BUTTON_START},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_LEFTSTICK},      (U32)1 << LLGameControl::Button::BUTTON_LEFTSTICK},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_RIGHTSTICK},     (U32)1 << LLGameControl::Button::BUTTON_RIGHTSTICK},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_LEFTSHOULDER},   (U32)1 << LLGameControl::Button::BUTTON_LEFTSHOULDER},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_RIGHTSHOULDER},  (U32)1 << LLGameControl::Button::BUTTON_RIGHTSHOULDER},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_DPAD_UP},        (U32)1 << LLGameControl::Button::BUTTON_DPAD_UP},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_DPAD_DOWN},      (U32)1 << LLGameControl::Button::BUTTON_DPAD_DOWN},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_DPAD_LEFT},      (U32)1 << LLGameControl::Button::BUTTON_DPAD_LEFT},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_DPAD_RIGHT},     (U32)1 << LLGameControl::Button::BUTTON_DPAD_RIGHT},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_MISC1},          (U32)1 << LLGameControl::Button::BUTTON_MISC1},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_PADDLE1},        (U32)1 << LLGameControl::Button::BUTTON_PADDLE1},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_PADDLE2},        (U32)1 << LLGameControl::Button::BUTTON_PADDLE2},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_PADDLE3},        (U32)1 << LLGameControl::Button::BUTTON_PADDLE3},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_PADDLE4},        (U32)1 << LLGameControl::Button::BUTTON_PADDLE4},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_TOUCHPAD},       (U32)1 << LLGameControl::Button::BUTTON_TOUCHPAD},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_21},             (U32)1 << LLGameControl::Button::BUTTON_21},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_22},             (U32)1 << LLGameControl::Button::BUTTON_22},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_23},             (U32)1 << LLGameControl::Button::BUTTON_23},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_24},             (U32)1 << LLGameControl::Button::BUTTON_24},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_25},             (U32)1 << LLGameControl::Button::BUTTON_25},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_26},             (U32)1 << LLGameControl::Button::BUTTON_26},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_27},             (U32)1 << LLGameControl::Button::BUTTON_27},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_28},             (U32)1 << LLGameControl::Button::BUTTON_28},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_29},             (U32)1 << LLGameControl::Button::BUTTON_29},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_30},             (U32)1 << LLGameControl::Button::BUTTON_30},
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_31},             (U32)1 << LLGameControl::Button::BUTTON_31}
+    };
+
     // We assume accumulateInternalState() has already been called and we will
     // finish by accumulating "external" state (if enabled)
     U32 old_buttons = g_finalState.mButtons;
-    g_finalState.mButtons = mButtonAccumulator;
+    g_finalState.mButtons = mActionTranslator.calculateTranslatedButtons(button_mappings, mAxesDirAccumulator, mButtonAccumulator);
+
+    mActionTranslator.calculateTranslatedAxes(axis_mappings, mAxesDirAccumulator, mButtonAccumulator, mAxesDirMappedAccumulator);
+
     if (g_translateAgentActions || true)
     {
         // accumulate from mExternalState
@@ -1190,10 +1295,13 @@ void LLGameControllerManager::computeFinalState()
         g_nextResendPeriod = 0; // packet needs to go out ASAP
     }
 
+    size_t i = 0;
+
     // clamp the accumulated axes
-    for (size_t i = 0; i < LLGameControl::NUM_AXES; ++i)
+    for(size_t mi = 0; mi < LLGameControl::NUM_AXES * 2; mi+=2)
     {
-        S32 axis = mAxesAccumulator[i];
+        i = mi / 2;
+        S32 axis = mAxesDirMappedAccumulator[mi] + (mAxesDirMappedAccumulator[mi+1] * -1);
         if (g_translateAgentActions)
         {
             // Note: we accumulate mExternalState onto local 'axis' variable
@@ -1403,11 +1511,30 @@ void LLGameControllerManager::updateFlycamMap(const std::string& action, LLGameC
 
 U32 LLGameControllerManager::computeInternalActionFlags()
 {
+    static const LLGameControlTranslator::ControllerMappings mappings = {
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::FWD},                    /*"push+"*/  AGENT_CONTROL_AT_POS    | AGENT_CONTROL_FAST_AT   },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::BACK},                   /*"push-"*/  AGENT_CONTROL_AT_NEG    | AGENT_CONTROL_FAST_AT   },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::LEFT},                   /*"slide+"*/ AGENT_CONTROL_LEFT_POS  | AGENT_CONTROL_FAST_LEFT },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::RIGHT},                  /*"slide-"*/ AGENT_CONTROL_LEFT_NEG  | AGENT_CONTROL_FAST_LEFT },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::UP},                     /*"jump+"*/  AGENT_CONTROL_UP_POS    | AGENT_CONTROL_FAST_UP   },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::ROLL_LEFT},              /*"jump-"*/  AGENT_CONTROL_UP_NEG    | AGENT_CONTROL_FAST_UP   },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::TURN_LEFT},              /*"turn+"*/  AGENT_CONTROL_YAW_POS   },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::TURN_RIGHT},             /*"turn-"*/  AGENT_CONTROL_YAW_NEG   },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::LOOK_UP},                /*"look+"*/  AGENT_CONTROL_PITCH_POS },
+        {{LLGameControl::ActionType::DOF,LLGameControl::DOFAction::LOOK_DOWN},              /*"look-"*/  AGENT_CONTROL_PITCH_NEG },
+    // Button actions
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_LEFTSTICK},      /*"stop"*/   AGENT_CONTROL_STOP      },
+    // These are HACKs. We borrow some AGENT_CONTROL bits for "unrelated" features.
+    // Not a problem because these bits are only used internally.
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_LEFTSHOULDER},   /*"toggle_run"*/  AGENT_CONTROL_NUDGE_AT_POS }, // HACK
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_DPAD_UP},        /*"toggle_fly"*/  AGENT_CONTROL_FLY          }, // HACK
+        {{LLGameControl::ActionType::BUTTON, LLGameControl::Button::BUTTON_RIGHTSHOULDER},  /*"toggle_flycam"*/ AGENT_CONTROL_NUDGE_AT_NEG }// HACK
+    };
     // add up device inputs
-    accumulateInternalState();
     if (g_controlAgent)
     {
-        return mActionTranslator.computeFlagsFromState(mAxesAccumulator, mButtonAccumulator);
+        // return mActionTranslator.computeFlagsFromState(mAxesAccumulator, mButtonAccumulator);
+        return mActionTranslator.calculateTranslatedButtons(mappings, mAxesDirAccumulator, mButtonAccumulator);
     }
     return 0;
 }
@@ -1672,6 +1799,7 @@ const std::map<std::string, std::string>& LLGameControl::getDeviceOptions()
 // or not.
 bool LLGameControl::computeFinalStateAndCheckForChanges()
 {
+    g_manager.accumulateInternalState();
     // Note: LLGameControllerManager::computeFinalState() modifies g_nextResendPeriod as a side-effect
     g_manager.computeFinalState();
 
@@ -2273,23 +2401,30 @@ std::string LLGameControl::getBindingAsString(const std::string& control) const
     {
         return std::string();
     }
-    
+
     const LLGameControl::Device* device = g_manager.getLastActiveDevice();
 
     if(!device)
     {
         return std::string();
     }
- 
+
+    SDL_Gamepad* gp = SDL_GetGamepadFromID(device->getJoystickID());
+
     if(cType == InputChannel::Type::TYPE_AXIS)
     {
         U8 axis = device->getOptions().unmapAxis(cIndex);
-        return "AXIS_" + std::to_string((U32)axis);
+        return std::to_string((SDL_GamepadAxis)axis);
     }
     else
     {
         U8 button = device->getOptions().unmapButton(cIndex);
-        return "BUTTON_" + std::to_string((U32)button);
+        if(button < 4)
+        {
+            return std::to_string(SDL_GetGamepadButtonLabel(gp, (SDL_GamepadButton)button));
+        }
+        return std::to_string((SDL_GamepadButton)button);
+
     }
 }
 

@@ -85,7 +85,31 @@ public:
     {
         CONTROL_MODE_AVATAR,
         CONTROL_MODE_FLYCAM,
+        CONTROL_MODE_CAPTIVE, // Avatar is sat, or controls have been taken
         CONTROL_MODE_NONE
+    };
+
+    enum ActionType
+    {
+        DOF,
+        BUTTON,
+    };
+
+    enum DOFAction: U8
+    {
+        LEFT,
+        RIGHT,
+        FWD,
+        BACK,
+        TURN_LEFT,
+        TURN_RIGHT,
+        LOOK_UP,
+        LOOK_DOWN,
+        UP,
+        DOWN,
+        ROLL_LEFT,
+        ROLL_RIGHT,
+        NUM_DOF_ACTIONS,
     };
 
     enum ActionNameType
@@ -107,6 +131,22 @@ public:
         AXIS_TRIGGERLEFT,
         AXIS_TRIGGERRIGHT,
         NUM_AXES
+    };
+
+    enum KeyboardAxisDir : U8
+    {
+        AXIS_LEFTX_PLUS,
+        AXIS_LEFTX_MINUS,
+        AXIS_LEFTY_PLUS,
+        AXIS_LEFTY_MINUS,
+        AXIS_RIGHTX_PLUS,
+        AXIS_RIGHTX_MINUS,
+        AXIS_RIGHTY_PLUS,
+        AXIS_RIGHTY_MINUS,
+        AXIS_TRIGGERLEFT_PLUS,
+        AXIS_TRIGGERLEFT_MINUS,
+        AXIS_TRIGGERRIGHT_PLUS,
+        AXIS_TRIGGERRIGHT_MINUS,
     };
 
     enum Button

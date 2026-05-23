@@ -5373,18 +5373,14 @@ void LLAppViewer::idle()
 
         // get control flags from each side
         U32 control_flags = gAgent.getControlFlags();
-        U32 game_control_action_flags = LLGameControl::computeInternalActionFlags();
 
         // apply to GameControl
         LLGameControl::setExternalInput(control_flags, gAgent.getGameControlButtonsFromKeys());
-        bool should_send_game_control = LLGameControl::computeFinalStateAndCheckForChanges();
         if (LLPanelPreferenceGameControl::isWaitingForInputChannel())
         {
             LLPanelPreferenceGameControl::applyGameControlInput();
-            // skip this send because input is being used to set preferences
-            should_send_game_control = false;
         }
-        if (should_send_game_control)
+        else if (LLGameControl::computeFinalStateAndCheckForChanges())
         {
             sendGameControlInput();
         }
@@ -5392,6 +5388,7 @@ void LLAppViewer::idle()
         // apply to AvatarControl
         if (LLGameControl::isEnabled() && LLGameControl::willControlAvatar())
         {
+            U32 game_control_action_flags = LLGameControl::computeInternalActionFlags();
             gAgent.applyExternalActionFlags(game_control_action_flags);
         }
 
