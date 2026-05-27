@@ -1487,7 +1487,7 @@ bool LLAppViewer::frame()
 void sendGameControlInput()
 {
     LLMessageSystem* msg = gMessageSystem;
-    const LLGameControl::State& state = LLGameControl::getState();
+    const LLGameControl::ServerState& state = LLGameControl::getServerState();
 
     msg->newMessageFast(_PREHASH_GameControlInput);
     msg->nextBlock("AgentData");
@@ -1646,9 +1646,11 @@ bool LLAppViewer::doFrame()
                     && !gFocusMgr.focusLocked())
                 {
                     LLPerfStats::RecordSceneTime T(LLPerfStats::StatType_t::RENDER_IDLE);
+                    gViewerInput.storeDeltaTime();
                     joystick->scanJoystick();
                     gKeyboard->scanKeyboard();
                     gViewerInput.scanMouse();
+                    gViewerInput.scanController();
                     if (gAgent.isCrouching())
                         gAgent.moveUp(-1);
                 }
@@ -5388,8 +5390,8 @@ void LLAppViewer::idle()
         // apply to AvatarControl
         if (LLGameControl::isEnabled() && LLGameControl::willControlAvatar())
         {
-            U32 game_control_action_flags = LLGameControl::computeInternalActionFlags();
-            gAgent.applyExternalActionFlags(game_control_action_flags);
+            // U32 game_control_action_flags = LLGameControl::computeInternalActionFlags();
+            // gAgent.applyExternalActionFlags(game_control_action_flags);
         }
 
         send_agent_update(false);

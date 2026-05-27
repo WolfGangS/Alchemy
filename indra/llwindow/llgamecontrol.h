@@ -89,27 +89,28 @@ public:
         CONTROL_MODE_NONE
     };
 
-    enum ActionType
+    enum ActionType: U8
     {
         DOF,
         BUTTON,
+        NONE = 255,
     };
 
-    enum DOFAction: U8
+    enum DOFAxis: U8
     {
-        LEFT,
-        RIGHT,
-        FWD,
-        BACK,
-        TURN_LEFT,
-        TURN_RIGHT,
-        LOOK_UP,
-        LOOK_DOWN,
-        UP,
-        DOWN,
-        ROLL_LEFT,
-        ROLL_RIGHT,
-        NUM_DOF_ACTIONS,
+        AXIS_LEFT,
+        AXIS_RIGHT,
+        AXIS_FORWARD,
+        AXIS_BACKWARD,
+        AXIS_TURN_LEFT,
+        AXIS_TURN_RIGHT,
+        AXIS_LOOK_UP,
+        AXIS_LOOK_DOWN,
+        AXIS_UP,
+        AXIS_DOWN,
+        AXIS_ROLL_LEFT,
+        AXIS_ROLL_RIGHT,
+        NUM_DOF_AXES,
     };
 
     enum ActionNameType
@@ -149,7 +150,7 @@ public:
         AXIS_TRIGGERRIGHT_MINUS,
     };
 
-    enum Button
+    enum Button : U8
     {
         BUTTON_A,
         BUTTON_B,
@@ -290,10 +291,24 @@ public:
     public:
         State();
         void clear();
+        void storePrevious();
         bool onButton(U8 button, bool pressed);
+        std::vector<U16> mAxes; // [ -32768, 32767 ]
+        U32 mButtons;
+
+        std::vector<U16> mPrevAxes;
+        U32 mPrevButtons;
+    };
+
+    class ServerState
+    {
+    public:
+        ServerState();
+        void clear();
         std::vector<S16> mAxes; // [ -32768, 32767 ]
         std::vector<S16> mPrevAxes; // value in last outgoing packet
         U32 mButtons;
+        U32 mPrevButtons;
     };
 
     // Device is a data structure for describing any detected controller
@@ -323,6 +338,13 @@ public:
     static bool isEnabled();
     static void setEnabled(bool enabled);
 
+    static bool actionFromString(const std::string& string, ActionType& actionType, U8& action);
+    static std::string stringFromAction(const ActionType actionType, U8 action);
+    static std::string controllerInputStringFromAction(const ActionType actionType, U8 action);
+
+    static F32 getControllerHeldTime(ActionType actionType, U8 action);
+    static S32 getControllerHeldFrames(ActionType actionType, U8 action);
+
     static bool isInitialized();
 
     // Bulk settings I/O is delegated to the host so this library does not
@@ -348,11 +370,13 @@ public:
     // before deciding to put a GameControlInput packet on the wire
     // or not.
     static bool computeFinalStateAndCheckForChanges();
+    static void computeFinalState();
 
     static void clearAllStates();
 
     static void processEvents(bool app_has_focus = true);
     static void handleEvent(const SDL_Event& event, bool app_has_focus);
+    static const ServerState& getServerState();
     static const State& getState();
     static InputChannel getActiveInputChannel();
     static void getFlycamInputs(std::vector<F32>& inputs_out);

@@ -57,8 +57,8 @@ public:
     using NamedChannels = std::vector< NamedChannel >;
 
     LLGameControlTranslator();
-    const S32 calculateTranslatedButtons(const ControllerMappings mapping, const std::vector<S32> DOF, const U32 buttons);
-    void calculateTranslatedAxes(const ControllerMappings mapping, const std::vector<S32> DOF, const U32 buttons, std::vector<S32>& outDOF);
+    const S32 calculateTranslatedButtons(const ControllerMappings mapping, const LLGameControl::State state);
+    void calculateTranslatedAxes(const ControllerMappings mapping, const LLGameControl::State state, std::vector<U16>& outDOF);
     void setAvailableActionMasks(ActionToMaskMap& action_to_mask);
     LLGameControl::InputChannel getChannelByAction(const std::string& action) const;
     void setMappings(NamedChannels& named_channels);

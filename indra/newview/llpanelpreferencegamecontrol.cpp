@@ -305,47 +305,47 @@ bool LLPanelPreferenceGameControl::isWaitingForInputChannel()
 // Automatically assigns the detected input channel to the selected cell.
 void LLPanelPreferenceGameControl::applyGameControlInput()
 {
-    if (!sGameControlPanel || !sSelectedGrid || !sSelectedCell)
-        return;
+    // if (!sGameControlPanel || !sSelectedGrid || !sSelectedCell)
+    //     return;
 
-    LLComboBox* combobox;
-    LLGameControl::InputChannel::Type expectedType;
-    if (sGameControlPanel->mAnalogChannelSelector->getVisible())
-    {
-        combobox = sGameControlPanel->mAnalogChannelSelector;
-        expectedType = LLGameControl::InputChannel::TYPE_AXIS;
-    }
-    else if (sGameControlPanel->mBinaryChannelSelector->getVisible())
-    {
-        combobox = sGameControlPanel->mBinaryChannelSelector;
-        expectedType = LLGameControl::InputChannel::TYPE_BUTTON;
-    }
-    else
-    {
-        return;
-    }
+    // LLComboBox* combobox;
+    // LLGameControl::InputChannel::Type expectedType;
+    // if (sGameControlPanel->mAnalogChannelSelector->getVisible())
+    // {
+    //     combobox = sGameControlPanel->mAnalogChannelSelector;
+    //     expectedType = LLGameControl::InputChannel::TYPE_AXIS;
+    // }
+    // else if (sGameControlPanel->mBinaryChannelSelector->getVisible())
+    // {
+    //     combobox = sGameControlPanel->mBinaryChannelSelector;
+    //     expectedType = LLGameControl::InputChannel::TYPE_BUTTON;
+    // }
+    // else
+    // {
+    //     return;
+    // }
 
-    LLGameControl::InputChannel channel = LLGameControl::getActiveInputChannel();
-    if (channel.mType == expectedType)
-    {
-        std::string channel_name = channel.getLocalName();
-        std::string channel_label = LLPanelPreferenceGameControl::getChannelLabel(channel_name, combobox->getAllData());
+    // LLGameControl::InputChannel channel = LLGameControl::getActiveInputChannel();
+    // if (channel.mType == expectedType)
+    // {
+    //     std::string channel_name = channel.getLocalName();
+    //     std::string channel_label = LLPanelPreferenceGameControl::getChannelLabel(channel_name, combobox->getAllData());
 
-        // Device remapping tables allow duplicate targets, so dedup only applies to mActionTable.
-        if (sSelectedGrid == sGameControlPanel->mActionTable)
-        {
-            sGameControlPanel->removeDuplicateActionMapping(channel_label);
-        }
+    //     // Device remapping tables allow duplicate targets, so dedup only applies to mActionTable.
+    //     if (sSelectedGrid == sGameControlPanel->mActionTable)
+    //     {
+    //         sGameControlPanel->removeDuplicateActionMapping(channel_label);
+    //     }
 
-        sSelectedCell->setValue(channel_label);
-        sSelectedGrid->deselectAllItems();
-        sGameControlPanel->clearSelectionState();
+    //     sSelectedCell->setValue(channel_label);
+    //     sSelectedGrid->deselectAllItems();
+    //     sGameControlPanel->clearSelectionState();
 
-        // Push the panel's pending UI state straight into LLGameControl's
-        // runtime without touching gSavedSettings -- the eventual OK click
-        // (and the framework-driven saveSettings()) will persist them.
-        LLGameControl::applySettingsFromLLSD(sGameControlPanel->getSettingsAsLLSD());
-    }
+    //     // Push the panel's pending UI state straight into LLGameControl's
+    //     // runtime without touching gSavedSettings -- the eventual OK click
+    //     // (and the framework-driven saveSettings()) will persist them.
+    //     LLGameControl::applySettingsFromLLSD(sGameControlPanel->getSettingsAsLLSD());
+    // }
 }
 
 // Handles selection in the axis options table (invert, deadzone, offset).

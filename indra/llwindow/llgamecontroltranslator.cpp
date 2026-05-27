@@ -45,8 +45,7 @@ LLGameControlTranslator::LLGameControlTranslator()
 
 const S32 LLGameControlTranslator::calculateTranslatedButtons(
     const ControllerMappings mappings,
-    const std::vector<S32> DOF,
-    const U32 buttons
+    const LLGameControl::State state
 )
 {
     // HACK: supply hard-coded threshold for ON/OFF zones
@@ -56,7 +55,7 @@ const S32 LLGameControlTranslator::calculateTranslatedButtons(
 
 
 
-    size_t dofSize = DOF.size();
+    size_t axesSize = state.mAxes.size();
     for(const ControllerMapping mapping : mappings)
     {
         const ControllerActionTypeIndex from = mapping.first;
@@ -66,12 +65,12 @@ const S32 LLGameControlTranslator::calculateTranslatedButtons(
 
         if(from.first == LLGameControl::ActionType::BUTTON)
         {
-            btn = (buttons & (1 << from.second)) > 0;
+            btn = (state.mButtons & (1 << from.second)) > 0;
         }
         else if(from.first == LLGameControl::ActionType::DOF)
         {
-            if(from.second < dofSize) {
-                btn = DOF[from.second] > AXIS_THRESHOLD;
+            if(from.second < axesSize) {
+                btn = state.mAxes[from.second] > AXIS_THRESHOLD;
             }
         }
 
@@ -82,15 +81,14 @@ const S32 LLGameControlTranslator::calculateTranslatedButtons(
 
 void LLGameControlTranslator::calculateTranslatedAxes(
     const ControllerMappings mappings,
-    const std::vector<S32> DOF,
-    const U32 buttons,
-    std::vector<S32>& outDOF
+    const LLGameControl::State state,
+    std::vector<U16>& outDOF
 )
 {
     std::fill(outDOF.begin(), outDOF.end(), 0);
 
     size_t outDOFSize = outDOF.size();
-    size_t dofSize = DOF.size();
+    size_t dofSize = state.mAxes.size();
     for(const ControllerMapping mapping : mappings)
     {
         const ControllerActionTypeIndex from = mapping.first;
@@ -101,16 +99,16 @@ void LLGameControlTranslator::calculateTranslatedAxes(
             continue;
         }
 
-        S32 dof = 0;
+        S16 dof = 0;
 
         if(from.first == LLGameControl::ActionType::BUTTON)
         {
-            dof = 1.0 * ((buttons & (1 << from.second)) > 0);
+            dof = 1.0 * ((state.mButtons & (1 << from.second)) > 0);
         }
         else if(from.first == LLGameControl::ActionType::DOF)
         {
             if(from.second < dofSize) {
-                dof = DOF[from.second];
+                dof = state.mAxes[from.second];
             }
         }
 

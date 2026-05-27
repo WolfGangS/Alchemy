@@ -790,8 +790,9 @@ public:
         static LLCachedControl<bool> debug_show_game_controller_state(gSavedSettings, "DebugShowControllerState", false);
         if (debug_show_game_controller_state())
         {
-            static const char* axis_names[LLGameControl::NUM_AXES] = {
-                "LEFT X", "LEFT Y", "RIGHT X", "RIGHT Y", "L TRIGGER", "R TRIGGER"
+            static const char* axis_names[LLGameControl::NUM_DOF_AXES] = {
+                "LEFT","RIGHT","FORWARD","BACKWARD", "TURN LEFT", "TURN RIGHT",
+                "LOOK UP","LOOK DOWN", "UP", "DOWN", "ROLL LEFT", "ROLL RIGHT"
             };
             static const char* button_names[LLGameControl::NUM_BUTTONS] = {
                 "A", "B", "X", "Y", "BACK", "SELECT", "START", "LSTICK", "RSTICK",
@@ -804,9 +805,9 @@ public:
             {
                 addText(xpos, ypos, llformat(
                     "  %-10s %6d   %-10s %6d",
-                    (i < LLGameControl::NUM_AXES) ? axis_names[i] : "AXIS",
+                    (i < LLGameControl::NUM_DOF_AXES) ? axis_names[i] : "AXIS",
                     (S32)gc_state.mAxes[i],
-                    ((i+1) < LLGameControl::NUM_AXES) ? axis_names[i+1] : "AXIS",
+                    ((i+1) < LLGameControl::NUM_DOF_AXES) ? axis_names[i+1] : "AXIS",
                     i < gc_state.mAxes.size() ? (S32)gc_state.mAxes[i+1] : 0
                 ));
                 ypos += y_inc;

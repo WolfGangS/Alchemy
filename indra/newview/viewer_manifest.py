@@ -1252,6 +1252,7 @@ class LinuxManifest(ViewerManifest):
 
 
     def strip_binaries(self):
+        return
         if self.args['buildtype'].lower() == 'release' and self.is_packaging_viewer():
             print("* Going strip-crazy on the packaged binaries, since this is a Release build")
             # makes some small assumptions about our packaged dir structure
