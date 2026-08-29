@@ -8,6 +8,9 @@
       "packages": [ "alchemy-branding", "alchemy-dictionaries", "alchemy-fonts", "alsa", "apr", "bugsplat", "bugsplat-apple", "cef-bin", "collada-dom", "curl", "dbus", "faudio", "libgrapheme", "libndofdev", "lsl-definitions", "md4c", "minizip", "nvapi", "open-libndofdev", "openjpeg", "pipewire", "ppqsort", "pulseaudio", "secondlife-emoji-shortcodes", "tinygltf", "tracy", "v-hacd", "velopack", "vlc-bin", "webrtc", "websocketpp", "zlib" ]
     }
   ],
+  "overlay-ports": [
+    "cmake/overlay-ports"
+  ],
   "overlay-triplets": [
     "cmake/triplets"
   ]
