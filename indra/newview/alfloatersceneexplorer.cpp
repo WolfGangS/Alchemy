@@ -238,6 +238,37 @@ namespace
         return reveal;
     }
 
+    // The inventory item that entitles the agent to an asset: a full-perm
+    // item in their inventory, else a Library item. Not cached, so a copy
+    // taken after the face list was built counts.
+    LLUUID findRevealingItem(const LLUUID& asset_id)
+    {
+        if (asset_id.isNull())
+            return LLUUID::null;
+
+        LLViewerInventoryCategory::cat_array_t cats;
+        LLViewerInventoryItem::item_array_t items;
+        LLAssetIDMatches asset_id_matches(asset_id);
+        gInventory.collectDescendentsIf(gInventory.getRootFolderID(), cats, items,
+                                        LLInventoryModel::EXCLUDE_TRASH, asset_id_matches);
+        for (const auto& item : items)
+        {
+            if (item && item->getIsFullPerm())
+                return item->getUUID();
+        }
+
+        cats.clear();
+        items.clear();
+        gInventory.collectDescendentsIf(gInventory.getLibraryRootFolderID(), cats, items,
+                                        LLInventoryModel::EXCLUDE_TRASH, asset_id_matches);
+        for (const auto& item : items)
+        {
+            if (item)
+                return item->getUUID();
+        }
+        return LLUUID::null;
+    }
+
     // Asset id for display, or a friendly note when the user lacks the
     // permissions to see it.
     std::string assetIdForDisplay(const LLUUID& asset_id)
@@ -529,6 +560,9 @@ bool ALFloaterSceneExplorer::postBuild()
         getChild<LLUICtrl>(check_name)->setCommitCallback(
             boost::bind(&ALFloaterSceneExplorer::refreshDetail, this));
     }
+
+    getChild<LLScrollListCtrl>("detail_faces")->setDoubleClickCallback(
+        boost::bind(&ALFloaterSceneExplorer::onFaceDoubleClick, this));
 
     mPropsConn = ALObjectPropertiesCache::instance().setChangeCallback(
         boost::bind(&ALFloaterSceneExplorer::onPropsCacheChanged, this, _1));
@@ -2384,6 +2418,7 @@ void ALFloaterSceneExplorer::fillObjectDetail(ALSceneExplorerItem* item)
 
             const F32 alpha = te->getColor().mV[VALPHA];
             LLSD row;
+            row["value"] = (S32)i; // the face a double-click opens
             row["columns"][0]["column"] = "face";
             row["columns"][0]["value"]  = (S32)i;
             row["columns"][1]["column"] = "material";
@@ -2397,6 +2432,49 @@ void ALFloaterSceneExplorer::fillObjectDetail(ALSceneExplorerItem* item)
             faces->addElement(row);
         }
     }
+}
+
+// Opens the double-clicked face's material or texture in its preview, where
+// the agent could obtain the asset themselves (as canRevealAssetId has it).
+// The face is read again from the object, since the list is built only when
+// the selection changes.
+void ALFloaterSceneExplorer::onFaceDoubleClick()
+{
+    LLScrollListItem* row = getChild<LLScrollListCtrl>("detail_faces")->getFirstSelected();
+    if (!row)
+        return;
+
+    LLViewerObject* obj = gObjectList.findObject(mLastFacesID);
+    const S32 te_index = row->getValue().asInteger();
+    if (!obj || obj->isDead() || te_index < 0 || te_index >= (S32)obj->getNumTEs())
+        return;
+    const LLTextureEntry* te = obj->getTE((U8)te_index);
+    if (!te)
+        return;
+
+    const LLUUID& mat_id = obj->getRenderMaterialID((U8)te_index);
+    const bool is_material = mat_id.notNull();
+    const LLUUID asset_id = is_material ? mat_id : te->getID();
+    if (asset_id.isNull())
+        return;
+
+    const LLUUID item_id = findRevealingItem(asset_id);
+    if (item_id.notNull())
+    {
+        // By the item, so the preview takes its name and permissions.
+        LLFloaterReg::showInstance(is_material ? "material_editor" : "preview_texture", LLSD(item_id), TAKE_FOCUS_YES);
+        return;
+    }
+
+    // A texture anyone may see opens by its asset id. The material editor
+    // has no way to open an asset without an item.
+    if (!is_material && (get_is_predefined_texture(asset_id) || gAgent.isGodlikeWithoutAdminMenuFakery()))
+    {
+        LLFloaterReg::showInstance("preview_texture", LLSD(asset_id), TAKE_FOCUS_YES);
+        return;
+    }
+
+    make_ui_sound("UISndInvalidOp");
 }
 
 namespace

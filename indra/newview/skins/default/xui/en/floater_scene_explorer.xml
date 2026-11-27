@@ -602,7 +602,7 @@
                  follows="all"
                  layout="topleft"
                  name="detail_faces"
-                 tool_tip="Per-face materials and textures of the selected object (asset IDs show only for full-permission assets)"
+                 tool_tip="Per-face materials and textures of the selected object (asset IDs show only for full-permission assets). Double-click a face to preview its material or texture"
                  left="0"
                  top="0"
                  width="454"

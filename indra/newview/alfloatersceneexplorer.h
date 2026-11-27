@@ -131,6 +131,7 @@ private:
     void refreshDetail();
     void fillObjectDetail(ALSceneExplorerItem* item);
     void fillAvatarDetail(ALSceneExplorerItem* item);
+    void onFaceDoubleClick();
 
     // --- actions ----------------------------------------------------------
     void syncSelectionToWorld();
